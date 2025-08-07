@@ -19,15 +19,16 @@ public class POBrandListService {
     private POBrandListRepository poBrandListRepository;
 
     public POBrandList savePoBrandList(POBrandList poBrandList){
-
         String brand = poBrandList.getBrand().trim();
-        String category = poBrandList.getCategory() !=null ? poBrandList.getCategory().trim() : "";
+        String category = poBrandList.getCategory() != null ? poBrandList.getCategory().trim() : "";
 
-        Optional<POBrandList> existing = poBrandListRepository.findByBrandIgnoreCaseAndCategoryIgnoreCase(brand,category);
-        if (existing.isPresent()){
-            throw new RuntimeException("Duplicate entry: Brand already exists for this category.");
+        Optional<POBrandList> existing = poBrandListRepository.findByBrandIgnoreCaseAndCategoryIgnoreCase(brand, category);
+        if (existing.isPresent()) {
+            return null;
         }
 
+        poBrandList.setBrand(brand);
+        poBrandList.setCategory(category);
         return poBrandListRepository.save(poBrandList);
     }
     public List<POBrandList> getAllPOBrandList(){

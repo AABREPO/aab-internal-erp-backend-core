@@ -27,7 +27,7 @@ public class SecurityConfig {
                                 ,"/api/rental_forms/**","/api/tenantShop/**", "/api/po_model/**", "/api/po_brand/**", "/api/po_category/**"
                                 ,"/api/po_itemNames/**","/api/po_type/**","/api/purchase_orders/**","/api/site_incharge/**"
                                 ,"/api/stocking_location/**","/api/group_name/**","/api/mapped/category/**","/api/incoming_stock/**"
-                                ,"/api/net_stock/**").permitAll()
+                                ,"/api/net_stock/**","/api/advance_portal/**").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();

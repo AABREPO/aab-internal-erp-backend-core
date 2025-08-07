@@ -21,13 +21,15 @@ public class POTypeColorListService {
 
     public POTypeColorList savePoTypeColorList(POTypeColorList poTypeColorList){
         String typeColor = poTypeColorList.getTypeColor().trim();
-        String category = poTypeColorList.getCategory() !=null ? poTypeColorList.getCategory().trim() : "";
+        String category = poTypeColorList.getCategory() != null ? poTypeColorList.getCategory().trim() : "";
 
         Optional<POTypeColorList> existing = poTypeColorListRepository.findByTypeColorIgnoreCaseAndCategoryIgnoreCase(typeColor, category);
-        if (existing.isPresent()){
-            throw new RuntimeException("Duplicate entry: Type or Color already exists for this category. ");
+        if (existing.isPresent()) {
+            return null;
         }
 
+        poTypeColorList.setTypeColor(typeColor);
+        poTypeColorList.setCategory(category);
         return poTypeColorListRepository.save(poTypeColorList);
     }
 

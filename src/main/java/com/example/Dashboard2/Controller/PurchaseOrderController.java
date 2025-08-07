@@ -67,8 +67,8 @@ public class PurchaseOrderController {
     }
 
     @PutMapping("/markDeleted/{id}")
-    public ResponseEntity<PurchaseOrder> markDeleted(@PathVariable Long id, @RequestParam boolean deleted) {
-        PurchaseOrder updated = purchaseOrderService.toggleDeletedStatus(id, deleted);
+    public ResponseEntity<PurchaseOrder> markDeleted(@PathVariable Long id, @RequestParam boolean deleteStatus) {
+        PurchaseOrder updated = purchaseOrderService.toggleDeletedStatus(id, deleteStatus);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 

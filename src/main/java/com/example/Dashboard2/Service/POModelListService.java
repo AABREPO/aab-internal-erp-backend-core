@@ -23,9 +23,11 @@ public class POModelListService {
 
         Optional<POModelList> existing = poModelListRepository.findByModelIgnoreCaseAndCategoryIgnoreCase(model, category);
         if (existing.isPresent()) {
-            throw new RuntimeException("Duplicate entry: model already exists for this category.");
+            return null; // Already exists, no need to save
         }
 
+        poModelList.setModel(model);
+        poModelList.setCategory(category);
         return poModelListRepository.save(poModelList);
     }
 
