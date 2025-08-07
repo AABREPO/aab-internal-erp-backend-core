@@ -1,6 +1,9 @@
 package com.example.Dashboard2.Controller;
 
 import com.example.Dashboard2.Entity.*;
+import com.example.Dashboard2.DTO.PurchaseOrderResponseDTO;
+import com.example.Dashboard2.DTO.PurchaseOrderSearchRequest;
+import com.example.Dashboard2.DTO.PaginatedResponse;
 import com.example.Dashboard2.Repository.PurchaseOrderAuditRepository;
 import com.example.Dashboard2.Service.PurchaseOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +22,52 @@ public class PurchaseOrderController {
     public PurchaseOrder createOrUpdatePurchaseOrder(@RequestBody PurchaseOrder purchaseOrder) {
         return purchaseOrderService.savePurchaseOrder(purchaseOrder);
     }
-    // Get all purchase orders
-    @GetMapping("/getAll")
-    public List<PurchaseOrder> getAllPurchaseOrders() {
-        return purchaseOrderService.getAllPurchaseOrders();
+    // Enhanced Get all purchase orders with search, filter, sort, and pagination
+    @PostMapping("/getAll")
+    public ResponseEntity<?> getAllPurchaseOrders(
+            @RequestBody(required = false) PurchaseOrderSearchRequest request,
+            @RequestParam(required = false, defaultValue = "false") Boolean withNames) {
+        try {
+            // If no request body, return simple list (backward compatibility)
+            if (request == null) {
+                if (withNames) {
+                    return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrdersWithNames());
+                } else {
+                    return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders());
+                }
+            }
+
+            // Return paginated results with search/filter functionality
+            if (withNames) {
+                return ResponseEntity.ok(purchaseOrderService.getPurchaseOrdersWithNamesAndFilter(request));
+            } else {
+                return ResponseEntity.ok(purchaseOrderService.getPurchaseOrdersWithSearchAndFilter(request));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // Get all purchase orders with names
+    @GetMapping("/getAllWithNames")
+    public ResponseEntity<List<PurchaseOrderResponseDTO>> getAllPurchaseOrdersWithNames() {
+        try {
+            List<PurchaseOrderResponseDTO> purchaseOrders = purchaseOrderService.getAllPurchaseOrdersWithNames();
+            return ResponseEntity.ok(purchaseOrders);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // Get purchase order details by ID with names
+    @GetMapping("/details/{id}")
+    public ResponseEntity<PurchaseOrderResponseDTO> getPurchaseOrderDetails(@PathVariable Long id) {
+        try {
+            PurchaseOrderResponseDTO purchaseOrder = purchaseOrderService.getPurchaseOrderWithNamesById(id);
+            return ResponseEntity.ok(purchaseOrder);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/audit/getAll/{id}")
@@ -97,4 +142,6 @@ public class PurchaseOrderController {
                 .filter(a -> a.getPurchaseOrderId().equals(poId))
                 .toList();
     }
+
+
 }
