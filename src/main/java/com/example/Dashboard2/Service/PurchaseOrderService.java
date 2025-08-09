@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -89,7 +90,12 @@ public class PurchaseOrderService {
         dto.setCreatedDateTime(purchaseOrder.getCreatedDateTime());
         dto.setENo(purchaseOrder.getENo());
         dto.setDeleteStatus(purchaseOrder.isDeleteStatus());
-        dto.setPurchaseTable(purchaseOrder.getPurchaseTable());
+        // Ensure items array is not null so the client always receives an array (possibly empty)
+        dto.setPurchaseTable(
+                purchaseOrder.getPurchaseTable() != null
+                        ? purchaseOrder.getPurchaseTable()
+                        : Collections.emptyList()
+        );
         dto.setPoNotes(purchaseOrder.getPoNotes());
         
         // Resolve names
