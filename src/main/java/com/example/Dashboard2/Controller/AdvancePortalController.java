@@ -1,10 +1,12 @@
 package com.example.Dashboard2.Controller;
 
 import com.example.Dashboard2.Entity.AdvancePortal;
+import com.example.Dashboard2.Entity.AdvancePortalAudit;
 import com.example.Dashboard2.Service.AdvancePortalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -40,15 +42,17 @@ public class AdvancePortalController {
     @PutMapping("/edit/{id}")
     public ResponseEntity<AdvancePortal> updateAdvancePortal(
             @PathVariable Long id,
-            @RequestBody AdvancePortal updatedPortal
+            @RequestBody AdvancePortal updatedPortal,
+            @RequestParam String editedBy
     ) {
-        AdvancePortal updated = advancePortalService.updateAdvancePortal(id, updatedPortal);
+        AdvancePortal updated = advancePortalService.updateAdvancePortal(id, updatedPortal, editedBy);
         if (updated != null) {
             return ResponseEntity.ok(updated);
         } else {
             return ResponseEntity.notFound().build();
         }
     }
+
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteAdvancePortal(@PathVariable Long id) {
@@ -58,4 +62,15 @@ public class AdvancePortalController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/history/{id}")
+    public List<AdvancePortalAudit> getAuditHistory(@PathVariable int id) {
+        return advancePortalService.getAuditHistory(id);
+    }
+    @PostMapping("/upload-sql")
+    public ResponseEntity<String> uploadAdvancePortalSql(@RequestParam("file") MultipartFile file) {
+        String result = advancePortalService.uploadAdvancePortalData(file);
+        return ResponseEntity.ok(result);
+    }
+
 }

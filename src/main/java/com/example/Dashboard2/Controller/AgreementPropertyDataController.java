@@ -6,6 +6,7 @@ import com.example.Dashboard2.Service.AgreementPropertyDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -17,6 +18,7 @@ public class AgreementPropertyDataController {
 
     @PostMapping("/save")
     public AgreementPropertyDataWithFileNames saveAgreement(@RequestBody AgreementPropertyDataWithFileNames agreement) {
+        agreement.setTimestamp(LocalDateTime.now());
         return service.saveAgreement(agreement);
     }
 
