@@ -16,8 +16,19 @@ public interface WeeklyPaymentsReceivedRepository extends JpaRepository<WeeklyPa
 
     @Query("SELECT MAX(p.weeklyNumber) FROM WeeklyPaymentsReceived p")
     Integer findMaxWeeklyNumber();
+    @Query("SELECT DISTINCT w.weeklyNumber FROM WeeklyPaymentsReceived w WHERE w.status = true ORDER BY w.weeklyNumber ASC")
+    List<Integer> findAllActiveWeekNumbers();
+    @Query("SELECT MAX(w.weeklyNumber) FROM WeeklyPaymentsReceived w WHERE w.status = true")
+    Integer findLastClosedWeekNumber();
 
     List<WeeklyPaymentsReceived> findByWeeklyNumber(Integer weeklyNumber);
+
+    // WeeklyPaymentsReceivedRepository.java
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM WeeklyPaymentsReceived p WHERE p.weeklyNumber = :weekNumber")
+    Double getTotalPaymentsByWeek(@Param("weekNumber") Integer weekNumber);
+
+    @Query("SELECT p FROM WeeklyPaymentsReceived p WHERE p.weeklyNumber = :weekNumber AND p.type = 'Carry Forward'")
+    WeeklyPaymentsReceived findCarryForwardRow(@Param("weekNumber") Integer weekNumber);
 
     @Modifying
     @Transactional

@@ -3,6 +3,7 @@ package com.example.Dashboard2.Controller;
 
 import com.example.Dashboard2.Entity.WeeklyPaymentExpense;
 import com.example.Dashboard2.Service.WeeklyPaymentExpenseService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,4 +27,20 @@ public class WeeklyPaymentExpenseController {
     public WeeklyPaymentExpense save(@RequestBody WeeklyPaymentExpense expense) {
         return service.saveExpense(expense);
     }
+    @PutMapping("/update/{id}")
+    public WeeklyPaymentExpense updateExpense(@PathVariable Long id, @RequestBody WeeklyPaymentExpense expense) {
+        return service.updateExpense(id, expense);
+    }
+
+    @PostMapping("/update/save")
+    public WeeklyPaymentExpense saveExpenseSameWeeklyNumber(@RequestBody WeeklyPaymentExpense expense){
+        return service.saveExpenseForSameWeeklyNumber(expense);
+    }
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<WeeklyPaymentExpense> editExpense(
+            @PathVariable Long id,
+            @RequestBody WeeklyPaymentExpense updatedExpense) {
+        return ResponseEntity.ok(service.editExpense(id, updatedExpense));
+    }
+
 }

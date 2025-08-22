@@ -20,7 +20,7 @@ public class PurchaseOrderController {
         return purchaseOrderService.savePurchaseOrder(purchaseOrder);
     }
     // Get all purchase orders
-    @GetMapping("/getAll")
+    @PostMapping("/getAll")
     public List<PurchaseOrder> getAllPurchaseOrders() {
         return purchaseOrderService.getAllPurchaseOrders();
     }

@@ -195,6 +195,7 @@ public class AdvancePortalService {
                     portal.setTransferSiteId(parseIntSafe(dataMap.get("transfer_site_id")));
                     portal.setPaymentMode(dataMap.get("payment_mode"));
                     portal.setAmount(parseDoubleSafe(dataMap.get("amount")));
+                    portal.setEntryNo(parseLongSafe(dataMap.get("entry_no")));
                     portal.setBillAmount(parseDoubleSafe(dataMap.get("bill_amount")));
                     portal.setRefundAmount(parseDoubleSafe(dataMap.get("refund_amount")));
                     portal.setDescription(dataMap.get("description"));
@@ -240,5 +241,13 @@ public class AdvancePortalService {
             return 0.0;
         }
     }
+    private Long parseLongSafe(String value) {
+        try {
+            return value == null ? null : Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
 
 }

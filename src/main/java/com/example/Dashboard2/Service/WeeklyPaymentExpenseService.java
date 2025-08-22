@@ -1,6 +1,7 @@
 package com.example.Dashboard2.Service;
 
 import com.example.Dashboard2.Entity.WeeklyPaymentExpense;
+import com.example.Dashboard2.Entity.WeeklyPaymentsReceived;
 import com.example.Dashboard2.Repository.WeeklyPaymentExpenseRepository;
 import com.example.Dashboard2.Repository.WeeklyPaymentsReceivedRepository;
 import jakarta.transaction.Transactional;
@@ -74,4 +75,64 @@ public class WeeklyPaymentExpenseService {
     public void closeCurrentPeriod(Integer weekNumber) {
         repo.closePeriod(weekNumber, LocalDate.now());
     }
+
+    public WeeklyPaymentExpense editExpense(Long id, WeeklyPaymentExpense updatedExpense) {
+        WeeklyPaymentExpense existing = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Expense not found"));
+
+        existing.setAmount(updatedExpense.getAmount());
+        existing.setType(updatedExpense.getType());
+        existing.setDate(updatedExpense.getDate());
+        existing.setVendorId(updatedExpense.getVendorId());
+        existing.setContractorId(updatedExpense.getContractorId());
+        existing.setProjectId(updatedExpense.getProjectId());
+
+        return repo.save(existing);
+    }
+
+    public WeeklyPaymentExpense updateExpense(Long id, WeeklyPaymentExpense updatedExpense) {
+        Integer lastClosedWeek = repo.findLastClosedWeekNumber();
+        WeeklyPaymentExpense existing = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Expense not found"));
+
+        if (!existing.getWeeklyNumber().equals(lastClosedWeek)) {
+            throw new IllegalStateException("Only the last closed week's expenses can be edited.");
+        }
+
+        existing.setAmount(updatedExpense.getAmount());
+        existing.setType(updatedExpense.getType());
+        existing.setDate(updatedExpense.getDate());
+        existing.setVendorId(updatedExpense.getVendorId());
+        existing.setContractorId(updatedExpense.getContractorId());
+        existing.setProjectId(updatedExpense.getProjectId());
+
+        WeeklyPaymentExpense saved = repo.save(existing);
+
+        // ✅ Only update Carry Forward if status is true
+        if (saved.isStatus()) {
+            updateCarryForwardBalance(saved.getWeeklyNumber());
+        }
+
+        return saved;
+    }
+
+    // WeeklyPaymentExpenseService.java
+    public WeeklyPaymentExpense saveExpenseForSameWeeklyNumber(WeeklyPaymentExpense weeklyPaymentExpense){
+        WeeklyPaymentExpense saved = repo.save(weeklyPaymentExpense);
+        updateCarryForwardBalance(weeklyPaymentExpense.getWeeklyNumber());
+        return saved;
+    }
+
+    private void updateCarryForwardBalance(Integer weekNumber) {
+        Double totalExpenses = repo.getTotalExpenseByWeek(weekNumber);
+        Double totalPayments = paymentsRepo.getTotalPaymentsByWeek(weekNumber);
+        double balance = (totalPayments != null ? totalPayments : 0) - (totalExpenses != null ? totalExpenses : 0);
+        WeeklyPaymentsReceived carryForwardRow = paymentsRepo.findCarryForwardRow(weekNumber + 1);
+        if (carryForwardRow != null) {
+            carryForwardRow.setAmount(balance);
+            paymentsRepo.save(carryForwardRow);
+        }
+    }
+
+
 }

@@ -17,8 +17,16 @@ public interface WeeklyPaymentExpenseRepository extends JpaRepository<WeeklyPaym
 
     @Query("SELECT MAX(e.weeklyNumber) FROM WeeklyPaymentExpense e")
     Integer findMaxWeeklyNumber();
+    @Query("SELECT DISTINCT e.weeklyNumber FROM WeeklyPaymentExpense e WHERE e.status = true ORDER BY e.weeklyNumber ASC")
+    List<Integer> findAllActiveWeekNumbers();
+    @Query("SELECT MAX(w.weeklyNumber) FROM WeeklyPaymentExpense w WHERE w.status = true")
+    Integer findLastClosedWeekNumber();
 
     List<WeeklyPaymentExpense> findByWeeklyNumber(Integer weeklyNumber);
+
+    // WeeklyPaymentExpenseRepository.java
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM WeeklyPaymentExpense e WHERE e.weeklyNumber = :weekNumber")
+    Double getTotalExpenseByWeek(@Param("weekNumber") Integer weekNumber);
 
     @Modifying
     @Transactional

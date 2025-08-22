@@ -39,7 +39,6 @@ public class WeeklyPaymentsReceivedController {
         }
         return max;
     }
-
     /**
      * Account closure endpoint.
      *
@@ -79,4 +78,29 @@ public class WeeklyPaymentsReceivedController {
         return nextWeek;
     }
 
+    @GetMapping("/active_weeks")
+    public List<Integer> getActiveWeeks() {
+        return paymentsService.getAllActiveWeekNumbers();
+    }
+    @PutMapping("/update/{id}")
+    public WeeklyPaymentsReceived updatePayment(@PathVariable Long id, @RequestBody WeeklyPaymentsReceived payment) {
+        return paymentsService.updatePayment(id, payment);
+    }
+
+    @GetMapping("/last-closed-week")
+    public Integer getLastClosedWeek() {
+        return paymentsService.getLastClosedWeek(); // Add this method in service
+    }
+
+    @PostMapping("/update/save")
+    public WeeklyPaymentsReceived savePaymentReceivedForSameWeeklyNumber(@RequestBody WeeklyPaymentsReceived paymentsReceived){
+        return paymentsService.savePaymentReceivedForSameWeeklyNumber(paymentsReceived);
+    }
+
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<WeeklyPaymentsReceived> editPayment(
+            @PathVariable Long id,
+            @RequestBody WeeklyPaymentsReceived updatedPayment) {
+        return ResponseEntity.ok(paymentsService.editPayment(id, updatedPayment));
+    }
 }
