@@ -1,7 +1,9 @@
 package com.example.Dashboard2.Service;
 
 import com.example.Dashboard2.Entity.WeeklyPaymentExpense;
+import com.example.Dashboard2.Entity.WeeklyPaymentExpenseAudit;
 import com.example.Dashboard2.Entity.WeeklyPaymentsReceived;
+import com.example.Dashboard2.Repository.WeeklyPaymentExpenseAuditRepository;
 import com.example.Dashboard2.Repository.WeeklyPaymentExpenseRepository;
 import com.example.Dashboard2.Repository.WeeklyPaymentsReceivedRepository;
 import jakarta.transaction.Transactional;
@@ -18,11 +20,17 @@ public class WeeklyPaymentExpenseService {
 
     private final WeeklyPaymentExpenseRepository repo;
     private final WeeklyPaymentsReceivedRepository paymentsRepo;
+    private final WeeklyPaymentExpenseAuditRepository auditRepo;
 
-    public WeeklyPaymentExpenseService(WeeklyPaymentExpenseRepository repo, WeeklyPaymentsReceivedRepository paymentsRepo) {
+
+    public WeeklyPaymentExpenseService(WeeklyPaymentExpenseRepository repo,
+                                       WeeklyPaymentsReceivedRepository paymentsRepo,
+                                       WeeklyPaymentExpenseAuditRepository auditRepo) {
         this.repo = repo;
         this.paymentsRepo = paymentsRepo;
+        this.auditRepo = auditRepo;
     }
+
 
     private int getCurrentCalendarWeek() {
         LocalDate now = LocalDate.now();
@@ -76,10 +84,34 @@ public class WeeklyPaymentExpenseService {
         repo.closePeriod(weekNumber, LocalDate.now());
     }
 
-    public WeeklyPaymentExpense editExpense(Long id, WeeklyPaymentExpense updatedExpense) {
+    public WeeklyPaymentExpense editExpense(Long id,String username, WeeklyPaymentExpense updatedExpense) {
         WeeklyPaymentExpense existing = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Expense not found"));
 
+        // 🔹 Save Audit Before Updating
+        WeeklyPaymentExpenseAudit audit = new WeeklyPaymentExpenseAudit();
+        audit.setWeeklyPaymentExpenseId(existing.getId());
+        audit.setEditedBy(username); // replace with logged-in username if available
+        audit.setEditedDate(LocalDateTime.now());
+        audit.setWeeklyNumber(existing.getWeeklyNumber() != null ? existing.getWeeklyNumber().toString() : null);
+
+        audit.setOldDate(existing.getDate() != null ? existing.getDate().toString() : null);
+        audit.setOldAmount(existing.getAmount() != null ? existing.getAmount().toString() : null);
+        audit.setOldType(existing.getType());
+        audit.setOldContractorId(existing.getContractorId() != null ? existing.getContractorId().toString() : null);
+        audit.setOldVendorId(existing.getVendorId() != null ? existing.getVendorId().toString() : null);
+        audit.setOldProjectId(existing.getProjectId() != null ? existing.getProjectId().toString() : null);
+
+        audit.setNewDate(updatedExpense.getDate() != null ? updatedExpense.getDate().toString() : null);
+        audit.setNewAmount(updatedExpense.getAmount() != null ? updatedExpense.getAmount().toString() : null);
+        audit.setNewType(updatedExpense.getType());
+        audit.setNewContractorId(updatedExpense.getContractorId() != null ? updatedExpense.getContractorId().toString() : null);
+        audit.setNewVendorId(updatedExpense.getVendorId() != null ? updatedExpense.getVendorId().toString() : null);
+        audit.setNewProjectId(updatedExpense.getProjectId() != null ? updatedExpense.getProjectId().toString() : null);
+
+        auditRepo.save(audit);
+
+        // 🔹 Apply Update
         existing.setAmount(updatedExpense.getAmount());
         existing.setType(updatedExpense.getType());
         existing.setDate(updatedExpense.getDate());
@@ -90,7 +122,8 @@ public class WeeklyPaymentExpenseService {
         return repo.save(existing);
     }
 
-    public WeeklyPaymentExpense updateExpense(Long id, WeeklyPaymentExpense updatedExpense) {
+
+    public WeeklyPaymentExpense updateExpense(Long id, String username ,WeeklyPaymentExpense updatedExpense) {
         Integer lastClosedWeek = repo.findLastClosedWeekNumber();
         WeeklyPaymentExpense existing = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Expense not found"));
@@ -99,6 +132,30 @@ public class WeeklyPaymentExpenseService {
             throw new IllegalStateException("Only the last closed week's expenses can be edited.");
         }
 
+        // 🔹 Save Audit Before Updating
+        WeeklyPaymentExpenseAudit audit = new WeeklyPaymentExpenseAudit();
+        audit.setWeeklyPaymentExpenseId(existing.getId());
+        audit.setEditedBy(username); // later replace with logged-in username
+        audit.setEditedDate(LocalDateTime.now());
+        audit.setWeeklyNumber(existing.getWeeklyNumber().toString());
+
+        audit.setOldDate(existing.getDate() != null ? existing.getDate().toString() : null);
+        audit.setOldAmount(existing.getAmount() != null ? existing.getAmount().toString() : null);
+        audit.setOldType(existing.getType());
+        audit.setOldContractorId(existing.getContractorId() != null ? existing.getContractorId().toString() : null);
+        audit.setOldVendorId(existing.getVendorId() != null ? existing.getVendorId().toString() : null);
+        audit.setOldProjectId(existing.getProjectId() != null ? existing.getProjectId().toString() : null);
+
+        audit.setNewDate(updatedExpense.getDate() != null ? updatedExpense.getDate().toString() : null);
+        audit.setNewAmount(updatedExpense.getAmount() != null ? updatedExpense.getAmount().toString() : null);
+        audit.setNewType(updatedExpense.getType());
+        audit.setNewContractorId(updatedExpense.getContractorId() != null ? updatedExpense.getContractorId().toString() : null);
+        audit.setNewVendorId(updatedExpense.getVendorId() != null ? updatedExpense.getVendorId().toString() : null);
+        audit.setNewProjectId(updatedExpense.getProjectId() != null ? updatedExpense.getProjectId().toString() : null);
+
+        auditRepo.save(audit);
+
+        // 🔹 Apply Update
         existing.setAmount(updatedExpense.getAmount());
         existing.setType(updatedExpense.getType());
         existing.setDate(updatedExpense.getDate());
@@ -108,13 +165,13 @@ public class WeeklyPaymentExpenseService {
 
         WeeklyPaymentExpense saved = repo.save(existing);
 
-        // ✅ Only update Carry Forward if status is true
         if (saved.isStatus()) {
             updateCarryForwardBalance(saved.getWeeklyNumber());
         }
 
         return saved;
     }
+
 
     // WeeklyPaymentExpenseService.java
     public WeeklyPaymentExpense saveExpenseForSameWeeklyNumber(WeeklyPaymentExpense weeklyPaymentExpense){
@@ -129,10 +186,13 @@ public class WeeklyPaymentExpenseService {
         double balance = (totalPayments != null ? totalPayments : 0) - (totalExpenses != null ? totalExpenses : 0);
         WeeklyPaymentsReceived carryForwardRow = paymentsRepo.findCarryForwardRow(weekNumber + 1);
         if (carryForwardRow != null) {
+            Double discount = carryForwardRow.getDiscountAmount();
+            if (discount != null) {
+                balance -= discount;
+            }
             carryForwardRow.setAmount(balance);
             paymentsRepo.save(carryForwardRow);
         }
     }
-
 
 }

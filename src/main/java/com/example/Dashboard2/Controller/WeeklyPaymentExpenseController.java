@@ -28,8 +28,8 @@ public class WeeklyPaymentExpenseController {
         return service.saveExpense(expense);
     }
     @PutMapping("/update/{id}")
-    public WeeklyPaymentExpense updateExpense(@PathVariable Long id, @RequestBody WeeklyPaymentExpense expense) {
-        return service.updateExpense(id, expense);
+    public WeeklyPaymentExpense updateExpense(@PathVariable Long id,@RequestParam String username, @RequestBody WeeklyPaymentExpense expense) {
+        return service.updateExpense(id, username ,expense);
     }
 
     @PostMapping("/update/save")
@@ -39,8 +39,9 @@ public class WeeklyPaymentExpenseController {
     @PutMapping("/edit/{id}")
     public ResponseEntity<WeeklyPaymentExpense> editExpense(
             @PathVariable Long id,
+            @RequestParam String username,
             @RequestBody WeeklyPaymentExpense updatedExpense) {
-        return ResponseEntity.ok(service.editExpense(id, updatedExpense));
+        return ResponseEntity.ok(service.editExpense(id, username,updatedExpense));
     }
 
 }

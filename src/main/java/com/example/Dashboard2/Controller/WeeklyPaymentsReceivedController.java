@@ -49,7 +49,8 @@ public class WeeklyPaymentsReceivedController {
     @PostMapping("/account-closure")
     public Integer accountClosure(
             @RequestParam(required = false, defaultValue = "false") boolean carryForward,
-            @RequestParam(required = false, defaultValue = "0") double carryAmount) {
+            @RequestParam(required = false, defaultValue = "0") double carryAmount,
+            @RequestParam(required = false, defaultValue = "0") double discountAmount) {
 
         Integer currentWeek = paymentsService.getMaxWeeklyNumber();
         if (currentWeek == null) {
@@ -57,24 +58,28 @@ public class WeeklyPaymentsReceivedController {
         }
         int nextWeek = currentWeek + 1;
 
-        // Close current period: mark status true and set period_end_date for current week entries
+        // Close current period
         paymentsService.closeCurrentPeriod(currentWeek);
         expenseService.closeCurrentPeriod(currentWeek);
 
-        // If carry forward requested, save carry forward payment for next week
         if (carryForward && carryAmount > 0) {
             WeeklyPaymentsReceived carryPayment = new WeeklyPaymentsReceived();
             carryPayment.setDate(LocalDate.now());
+
+            // 👇 Already discounted by frontend
             carryPayment.setAmount(carryAmount);
+
             carryPayment.setType("Carry Forward");
-            carryPayment.setWeeklyNumber(nextWeek);  // Important: explicitly setting next week number
+            carryPayment.setWeeklyNumber(nextWeek);
             carryPayment.setStatus(false);
             carryPayment.setPeriodStartDate(LocalDate.now());
+
+            // 👇 Save original discount separately
+            carryPayment.setDiscountAmount(discountAmount);
 
             paymentsService.savePayment(carryPayment);
         }
 
-        // Return new weekly number for frontend update
         return nextWeek;
     }
 
@@ -83,8 +88,8 @@ public class WeeklyPaymentsReceivedController {
         return paymentsService.getAllActiveWeekNumbers();
     }
     @PutMapping("/update/{id}")
-    public WeeklyPaymentsReceived updatePayment(@PathVariable Long id, @RequestBody WeeklyPaymentsReceived payment) {
-        return paymentsService.updatePayment(id, payment);
+    public WeeklyPaymentsReceived updatePayment(@PathVariable Long id,@RequestParam String username, @RequestBody WeeklyPaymentsReceived payment) {
+        return paymentsService.updatePayment(id, username ,payment);
     }
 
     @GetMapping("/last-closed-week")
@@ -100,7 +105,8 @@ public class WeeklyPaymentsReceivedController {
     @PutMapping("/edit/{id}")
     public ResponseEntity<WeeklyPaymentsReceived> editPayment(
             @PathVariable Long id,
+            @RequestParam String username,
             @RequestBody WeeklyPaymentsReceived updatedPayment) {
-        return ResponseEntity.ok(paymentsService.editPayment(id, updatedPayment));
+        return ResponseEntity.ok(paymentsService.editPayment(id, username,updatedPayment));
     }
 }

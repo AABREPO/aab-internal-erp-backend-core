@@ -27,6 +27,9 @@ public class WeeklyPaymentsReceived {
     private LocalDate periodStartDate;
     @JsonProperty("period_end_date")
     private LocalDate periodEndDate;
+    @JsonProperty("discount_amount")
+    private double discountAmount;
+
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -51,5 +54,13 @@ public class WeeklyPaymentsReceived {
     }
     public void setPeriodEndDate(LocalDate periodEndDate) {
         this.periodEndDate = periodEndDate;
+    }
+
+    public double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = discountAmount;
     }
 }
