@@ -24,4 +24,11 @@ public class ClaimPaymentsService {
     public List<ClaimPayments> getClaimPaymentsByExpensesClaimId(int expensesClaimId) {
         return claimPaymentsRepository.findByExpensesClaimId(expensesClaimId);
     }
+    public ClaimPayments updateCashRegisterStatus(Long claimPaymentsId, boolean status) {
+        ClaimPayments claimPayments = claimPaymentsRepository.findById(claimPaymentsId)
+                .orElseThrow(() -> new RuntimeException("ClaimPayments not found with id: " + claimPaymentsId));
+        claimPayments.setCashRegisterStatus(status);
+        return claimPaymentsRepository.save(claimPayments);
+    }
+
 }

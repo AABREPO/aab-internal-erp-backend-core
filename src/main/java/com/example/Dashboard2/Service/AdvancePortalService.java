@@ -248,6 +248,15 @@ public class AdvancePortalService {
             return null;
         }
     }
+    public AdvancePortal updateDescription(Long id, String newDescription) {
+        Optional<AdvancePortal> optionalPortal = advancePortalRepository.findById(id);
 
+        if (optionalPortal.isPresent()) {
+            AdvancePortal portal = optionalPortal.get();
+            portal.setDescription(newDescription);
+            return advancePortalRepository.save(portal);
+        }
+        return null;
+    }
 
 }

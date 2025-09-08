@@ -72,5 +72,18 @@ public class AdvancePortalController {
         String result = advancePortalService.uploadAdvancePortalData(file);
         return ResponseEntity.ok(result);
     }
+    @PutMapping("/update/{id}")
+    public ResponseEntity<AdvancePortal> updateDescription(
+            @PathVariable Long id,
+            @RequestBody AdvancePortal advancePortal
+    ) {
+        AdvancePortal updated = advancePortalService.updateDescription(id, advancePortal.getDescription());
+
+        if (updated != null) {
+            return ResponseEntity.ok(updated);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 }

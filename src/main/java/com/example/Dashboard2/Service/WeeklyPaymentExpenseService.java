@@ -5,8 +5,10 @@ import com.example.Dashboard2.Entity.WeeklyPaymentExpenseAudit;
 import com.example.Dashboard2.Entity.WeeklyPaymentsReceived;
 import com.example.Dashboard2.Repository.WeeklyPaymentExpenseAuditRepository;
 import com.example.Dashboard2.Repository.WeeklyPaymentExpenseRepository;
+import com.example.Dashboard2.Repository.WeeklyPaymentsDailyEntryRepository;
 import com.example.Dashboard2.Repository.WeeklyPaymentsReceivedRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,7 +23,8 @@ public class WeeklyPaymentExpenseService {
     private final WeeklyPaymentExpenseRepository repo;
     private final WeeklyPaymentsReceivedRepository paymentsRepo;
     private final WeeklyPaymentExpenseAuditRepository auditRepo;
-
+    @Autowired
+    private WeeklyPaymentsDailyEntryRepository dailyEntryRepo;
 
     public WeeklyPaymentExpenseService(WeeklyPaymentExpenseRepository repo,
                                        WeeklyPaymentsReceivedRepository paymentsRepo,
@@ -117,7 +120,9 @@ public class WeeklyPaymentExpenseService {
         existing.setDate(updatedExpense.getDate());
         existing.setVendorId(updatedExpense.getVendorId());
         existing.setContractorId(updatedExpense.getContractorId());
+        existing.setEmployeeId(updatedExpense.getEmployeeId());
         existing.setProjectId(updatedExpense.getProjectId());
+        existing.setAdvancePortalId(updatedExpense.getAdvancePortalId());
 
         return repo.save(existing);
     }
@@ -162,6 +167,8 @@ public class WeeklyPaymentExpenseService {
         existing.setVendorId(updatedExpense.getVendorId());
         existing.setContractorId(updatedExpense.getContractorId());
         existing.setProjectId(updatedExpense.getProjectId());
+        existing.setAdvancePortalId(updatedExpense.getAdvancePortalId());
+        existing.setEmployeeId(updatedExpense.getEmployeeId());
 
         WeeklyPaymentExpense saved = repo.save(existing);
 
@@ -179,6 +186,22 @@ public class WeeklyPaymentExpenseService {
         updateCarryForwardBalance(weeklyPaymentExpense.getWeeklyNumber());
         return saved;
     }
+    // WeeklyPaymentExpenseService.java
+    public void deleteWeeklyPaymentExpense(Long id) {
+        WeeklyPaymentExpense expense = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not Found " + id));
+
+        Integer weekNumber = expense.getWeeklyNumber();
+
+        // delete it
+        repo.deleteById(id);
+
+        // only if status is true → update balance
+        if (Boolean.TRUE.equals(expense.isStatus())) {
+            updateCarryForwardBalance(weekNumber);
+        }
+    }
+
 
     private void updateCarryForwardBalance(Integer weekNumber) {
         Double totalExpenses = repo.getTotalExpenseByWeek(weekNumber);
@@ -194,5 +217,91 @@ public class WeeklyPaymentExpenseService {
             paymentsRepo.save(carryForwardRow);
         }
     }
+
+    public WeeklyPaymentExpense saveOrUpdateDailyExpense(WeeklyPaymentExpense newExpense) {
+        Integer currentWeek = getMaxWeeklyNumber();
+        if (currentWeek == null) {
+            currentWeek = getCurrentCalendarWeek();
+        }
+        if (newExpense.getWeeklyNumber() == null) {
+            newExpense.setWeeklyNumber(currentWeek);
+        }
+        if (newExpense.getPeriodStartDate() == null) {
+            newExpense.setPeriodStartDate(LocalDate.now());
+        }
+        if (newExpense.getCreatedAt() == null) {
+            newExpense.setCreatedAt(LocalDateTime.now());
+        }
+
+        // ✅ Fetch all matches instead of assuming one
+        List<WeeklyPaymentExpense> existingList = repo.findByDateAndWeeklyNumberAndType(
+                newExpense.getDate(),
+                newExpense.getWeeklyNumber(),
+                newExpense.getType()
+        );
+
+        if (!existingList.isEmpty()) {
+            // Merge into the first existing record
+            WeeklyPaymentExpense existing = existingList.get(0);
+            Double existingAmount = existing.getAmount() != null ? existing.getAmount() : 0.0;
+            Double newAmount = newExpense.getAmount() != null ? newExpense.getAmount() : 0.0;
+            existing.setAmount(existingAmount + newAmount);
+            return repo.save(existing);
+
+            // 🚨 Optional cleanup: remove duplicates if you want only one row per (date, week, type)
+            // for (int i = 1; i < existingList.size(); i++) {
+            //     repo.delete(existingList.get(i));
+            // }
+
+        } else {
+            // No existing row → create new one
+            return repo.save(newExpense);
+        }
+    }
+
+
+    public void recalculateWeeklyDailyExpense(Integer weeklyNumber, LocalDate date) {
+        // ✅ Sum of amount + extra_amount from daily entries
+        Double totalDailyExpenses = dailyEntryRepo.sumAmountAndExtraByWeekAndDate(weeklyNumber, date);
+        if (totalDailyExpenses == null) {
+            totalDailyExpenses = 0.0;
+        }
+
+        // ✅ Fetch all matching weekly expense rows
+        List<WeeklyPaymentExpense> existingList =
+                repo.findByDateAndWeeklyNumberAndType(date, weeklyNumber, "Daily");
+
+        if (!existingList.isEmpty()) {
+            // Update the FIRST one and delete duplicates (optional)
+            WeeklyPaymentExpense existing = existingList.get(0);
+            existing.setAmount(totalDailyExpenses);
+            repo.save(existing);
+
+            if (existingList.size() > 1) {
+                // clean up duplicates if you want to enforce only one record
+                for (int i = 1; i < existingList.size(); i++) {
+                    repo.delete(existingList.get(i));
+                }
+            }
+
+        } else {
+            // ✅ Create new row if none exists
+            WeeklyPaymentExpense newExpense = new WeeklyPaymentExpense();
+            newExpense.setDate(date);
+            newExpense.setWeeklyNumber(weeklyNumber);
+            newExpense.setType("Daily");
+            newExpense.setAmount(totalDailyExpenses);
+            newExpense.setCreatedAt(LocalDateTime.now());
+
+            // 🔹 Hardcode contractor & project
+            newExpense.setContractorId(117L);
+            newExpense.setProjectId(8L);
+            newExpense.setVendorId(null);
+            newExpense.setStatus(false);
+            newExpense.setPeriodStartDate(LocalDate.now());
+            repo.save(newExpense);
+        }
+    }
+
 
 }

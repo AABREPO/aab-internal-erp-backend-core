@@ -28,7 +28,10 @@ public class SecurityConfig {
                                 ,"/api/po_itemNames/**","/api/po_type/**","/api/purchase_orders/**","/api/site_incharge/**"
                                 ,"/api/stocking_location/**","/api/group_name/**","/api/mapped/category/**","/api/incoming_stock/**"
                                 ,"/api/net_stock/**","/api/payments-received/**","/api/weekly-expenses/**","/api/advance_portal/**"
-                                ,"/advance_portal/googleUploader/**","/api/claim_payments/**").permitAll()
+                                ,"/advance_portal/googleUploader/**","/api/claim_payments/**","/api/weekly_payment_audit/**"
+                                ,"/api/weekly_types/**","/api/weekly_received_types/**","/api/labours-details/**","/api/daily-payments/**"
+                                ,"/api/refund_received/**","/api/daily_entry_audit/**","/api/employee_details/**","/api/cash-register/**"
+                                ,"/api/purposes/**","/api/staff-advance/**").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();

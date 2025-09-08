@@ -22,6 +22,10 @@ public class WeeklyPaymentExpenseController {
     public List<WeeklyPaymentExpense> getByWeek(@PathVariable Integer weekNumber) {
         return service.getExpensesByWeek(weekNumber);
     }
+    @PostMapping("/save-daily")
+    public WeeklyPaymentExpense saveDailyExpense(@RequestBody WeeklyPaymentExpense expense) {
+        return service.saveOrUpdateDailyExpense(expense);
+    }
 
     @PostMapping("/save")
     public WeeklyPaymentExpense save(@RequestBody WeeklyPaymentExpense expense) {
@@ -44,4 +48,8 @@ public class WeeklyPaymentExpenseController {
         return ResponseEntity.ok(service.editExpense(id, username,updatedExpense));
     }
 
+    @DeleteMapping("/delete/{id}")
+    public void deleteWeeklyPaymentExpense(@PathVariable Long id){
+        service.deleteWeeklyPaymentExpense(id);
+    }
 }

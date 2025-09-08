@@ -56,14 +56,11 @@ public class POBrandListService {
         poBrandListRepository.deleteAll();
     }
 
-
     public String uploadPOBrandLists(MultipartFile file) {
         if (file.isEmpty()) {
             return "Please upload a file!";
         }
-
         List<POBrandList> poBrandLists = new ArrayList<>();
-
         // Fetch existing brands with their categories to check for duplicates
         List<POBrandList> existingEntries = poBrandListRepository.findAll();
         Set<String> existingModelCategorySet = new HashSet<>();
@@ -71,11 +68,9 @@ public class POBrandListService {
             existingModelCategorySet.add(existing.getBrand().toLowerCase() + "::" +
                     (existing.getCategory() != null ? existing.getCategory().toLowerCase() : ""));
         }
-
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String filename = file.getOriginalFilename();
             String line;
-
             if (filename != null && filename.endsWith(".csv")) {
                 boolean isFirstLine = true;
                 while ((line = reader.readLine()) != null) {
@@ -87,7 +82,6 @@ public class POBrandListService {
                     if (values.length >= 1) {
                         String brand = values[0].trim();
                         String category = values.length > 1 ? values[1].trim() : "";
-
                         String key = brand.toLowerCase() + "::" + category.toLowerCase();
                         if (!existingModelCategorySet.contains(key)) {
                             POBrandList poBrandList = new POBrandList();

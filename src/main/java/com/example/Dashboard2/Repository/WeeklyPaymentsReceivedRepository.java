@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -23,11 +24,20 @@ public interface WeeklyPaymentsReceivedRepository extends JpaRepository<WeeklyPa
 
     List<WeeklyPaymentsReceived> findByWeeklyNumber(Integer weeklyNumber);
 
+    @Query("SELECT w FROM WeeklyPaymentsReceived w " +
+            "WHERE w.date = :date AND w.weeklyNumber = :weeklyNumber AND w.type = :type")
+    WeeklyPaymentsReceived findByWeeklyNumberAndDateAndType(@Param("date") LocalDate date,
+                                                            @Param("weeklyNumber") Integer weeklyNumber,
+                                                            @Param("type") String type);
+
     // WeeklyPaymentsReceivedRepository.java
-    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM WeeklyPaymentsReceived p WHERE p.weeklyNumber = :weekNumber")
+    @Query("SELECT COALESCE(SUM(p.amount), 0) " +
+            "FROM WeeklyPaymentsReceived p " +
+            "WHERE p.weeklyNumber = :weekNumber " +
+            "AND LOWER(p.type) <> 'handover'")
     Double getTotalPaymentsByWeek(@Param("weekNumber") Integer weekNumber);
 
-    @Query("SELECT p FROM WeeklyPaymentsReceived p WHERE p.weeklyNumber = :weekNumber AND p.type = 'Carry Forward'")
+    @Query("SELECT p FROM WeeklyPaymentsReceived p WHERE p.weeklyNumber = :weekNumber AND p.type = 'Carry (CF)'")
     WeeklyPaymentsReceived findCarryForwardRow(@Param("weekNumber") Integer weekNumber);
 
     @Modifying

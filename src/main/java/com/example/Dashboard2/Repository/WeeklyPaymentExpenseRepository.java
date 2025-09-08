@@ -21,6 +21,13 @@ public interface WeeklyPaymentExpenseRepository extends JpaRepository<WeeklyPaym
     List<Integer> findAllActiveWeekNumbers();
     @Query("SELECT MAX(w.weeklyNumber) FROM WeeklyPaymentExpense w WHERE w.status = true")
     Integer findLastClosedWeekNumber();
+    @Query("SELECT w FROM WeeklyPaymentExpense w " +
+            "WHERE w.date = :date AND w.weeklyNumber = :weekNumber AND w.type = :type")
+    List<WeeklyPaymentExpense> findByDateAndWeeklyNumberAndType(
+            @Param("date") LocalDate date,
+            @Param("weekNumber") Integer weekNumber,
+            @Param("type") String type
+    );
 
     List<WeeklyPaymentExpense> findByWeeklyNumber(Integer weeklyNumber);
 

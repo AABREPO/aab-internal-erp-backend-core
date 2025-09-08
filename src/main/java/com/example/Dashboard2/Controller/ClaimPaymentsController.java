@@ -28,4 +28,10 @@ public class ClaimPaymentsController {
     public List<ClaimPayments> getByExpensesClaimId(@PathVariable int expensesClaimId) {
         return claimPaymentsService.getClaimPaymentsByExpensesClaimId(expensesClaimId);
     }
+    @PutMapping("/update-status/{id}")
+    public ClaimPayments updateCashRegisterStatus(@PathVariable("id") Long claimPaymentsId,
+                                                  @RequestParam boolean status) {
+        return claimPaymentsService.updateCashRegisterStatus(claimPaymentsId, status);
+    }
+
 }

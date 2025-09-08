@@ -4,6 +4,7 @@ package com.example.Dashboard2.Entity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "weekly_payments_received")
@@ -17,6 +18,8 @@ public class WeeklyPaymentsReceived {
     private LocalDate date;
     @JsonProperty("amount")
     private Double amount;
+    @JsonProperty("created_at")
+    private LocalDateTime createdAt;
     @JsonProperty("type")
     private String type;
     @JsonProperty("weekly_number")
@@ -37,6 +40,15 @@ public class WeeklyPaymentsReceived {
     public void setDate(LocalDate date) { this.date = date; }
     public Double getAmount() { return amount; }
     public void setAmount(Double amount) { this.amount = amount; }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
     public boolean isStatus() { return status; }

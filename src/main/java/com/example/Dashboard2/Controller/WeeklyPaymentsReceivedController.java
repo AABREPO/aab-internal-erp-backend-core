@@ -1,5 +1,6 @@
 package com.example.Dashboard2.Controller;
 
+import com.example.Dashboard2.Entity.WeeklyPaymentTypes;
 import com.example.Dashboard2.Entity.WeeklyPaymentsReceived;
 import com.example.Dashboard2.Service.WeeklyPaymentExpenseService;
 import com.example.Dashboard2.Service.WeeklyPaymentsReceivedService;
@@ -25,6 +26,10 @@ public class WeeklyPaymentsReceivedController {
     public java.util.List<WeeklyPaymentsReceived> getByWeek(@PathVariable Integer weekNumber) {
         return paymentsService.getPaymentsByWeek(weekNumber);
     }
+    @GetMapping("/getAll")
+    public List<WeeklyPaymentsReceived> getAllTypes(){
+        return paymentsService.getAllWeeklyPaymentsReceived();
+    }
 
     @PostMapping("/save")
     public WeeklyPaymentsReceived save(@RequestBody WeeklyPaymentsReceived payment) {
@@ -48,6 +53,7 @@ public class WeeklyPaymentsReceivedController {
      */
     @PostMapping("/account-closure")
     public Integer accountClosure(
+            @RequestParam String closureType,
             @RequestParam(required = false, defaultValue = "false") boolean carryForward,
             @RequestParam(required = false, defaultValue = "0") double carryAmount,
             @RequestParam(required = false, defaultValue = "0") double discountAmount) {
@@ -58,23 +64,19 @@ public class WeeklyPaymentsReceivedController {
         }
         int nextWeek = currentWeek + 1;
 
-        // Close current period
+        // Close current periods
         paymentsService.closeCurrentPeriod(currentWeek);
         expenseService.closeCurrentPeriod(currentWeek);
 
         if (carryForward && carryAmount > 0) {
             WeeklyPaymentsReceived carryPayment = new WeeklyPaymentsReceived();
             carryPayment.setDate(LocalDate.now());
-
-            // 👇 Already discounted by frontend
             carryPayment.setAmount(carryAmount);
-
-            carryPayment.setType("Carry Forward");
-            carryPayment.setWeeklyNumber(nextWeek);
+            carryPayment.setType(closureType);
+            int targetWeek = "Handover".equalsIgnoreCase(closureType) ? currentWeek : nextWeek;
+            carryPayment.setWeeklyNumber(targetWeek);
             carryPayment.setStatus(false);
             carryPayment.setPeriodStartDate(LocalDate.now());
-
-            // 👇 Save original discount separately
             carryPayment.setDiscountAmount(discountAmount);
 
             paymentsService.savePayment(carryPayment);
@@ -108,5 +110,9 @@ public class WeeklyPaymentsReceivedController {
             @RequestParam String username,
             @RequestBody WeeklyPaymentsReceived updatedPayment) {
         return ResponseEntity.ok(paymentsService.editPayment(id, username,updatedPayment));
+    }
+    @DeleteMapping("/delete/{id}")
+    public void deleteWeeklyPaymentsReceived(@PathVariable Long id){
+        paymentsService.deleteWeeklyPaymentsReceived(id);
     }
 }

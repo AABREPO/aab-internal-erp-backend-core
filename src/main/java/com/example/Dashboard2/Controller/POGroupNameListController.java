@@ -14,6 +14,7 @@ public class POGroupNameListController {
     @Autowired
     private POGroupNameService poGroupNameService;
 
+
     @PostMapping("/save")
     public POGroupNameList saveGroupName(@RequestBody POGroupNameList poGroupNameList){
         return poGroupNameService.saveGroupNameList(poGroupNameList);

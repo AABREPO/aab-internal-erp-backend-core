@@ -1,8 +1,10 @@
 package com.example.Dashboard2.Service;
 
+import com.example.Dashboard2.Entity.WeeklyPaymentExpense;
 import com.example.Dashboard2.Entity.WeeklyPaymentsReceived;
 import com.example.Dashboard2.Entity.WeeklyPaymentsReceivedAudit;
 import com.example.Dashboard2.Repository.WeeklyPaymentExpenseRepository;
+import com.example.Dashboard2.Repository.WeeklyPaymentRefundReceivedRepository;
 import com.example.Dashboard2.Repository.WeeklyPaymentsReceivedAuditRepository;
 import com.example.Dashboard2.Repository.WeeklyPaymentsReceivedRepository;
 import jakarta.transaction.Transactional;
@@ -25,6 +27,8 @@ public class WeeklyPaymentsReceivedService {
     @Autowired
     private WeeklyPaymentsReceivedAuditRepository auditRepo;
 
+    @Autowired
+    private WeeklyPaymentRefundReceivedRepository refundReceivedRepository;
 
     public WeeklyPaymentsReceivedService(WeeklyPaymentsReceivedRepository repo) {
         this.repo = repo;
@@ -37,6 +41,9 @@ public class WeeklyPaymentsReceivedService {
     }
     public List<Integer> getAllActiveWeekNumbers() {
         return repo.findAllActiveWeekNumbers();
+    }
+    public List<WeeklyPaymentsReceived> getAllWeeklyPaymentsReceived(){
+        return repo.findAll();
     }
 
     public List<WeeklyPaymentsReceived> getPaymentsByWeek(Integer weekNumber) {
@@ -55,6 +62,9 @@ public class WeeklyPaymentsReceivedService {
         }
         if (payment.getPeriodStartDate() == null) {
             payment.setPeriodStartDate(LocalDate.now());
+        }
+        if (payment.getCreatedAt() == null) {
+            payment.setCreatedAt(LocalDateTime.now());
         }
         return repo.save(payment);
     }
@@ -147,6 +157,22 @@ public class WeeklyPaymentsReceivedService {
         return saved;
     }
 
+    public void deleteWeeklyPaymentsReceived(Long id) {
+        WeeklyPaymentsReceived payment = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Payment Received Not Found " + id));
+
+        Integer weekNumber = payment.getWeeklyNumber();
+
+        // delete it
+        repo.deleteById(id);
+
+        // only if status is true → update balance
+        if (Boolean.TRUE.equals(payment.isStatus())) {
+            updateCarryForwardBalance(weekNumber);
+        }
+    }
+
+
     private void updateCarryForwardBalance(Integer weekNumber) {
         Double totalExpenses = expenseRepo.getTotalExpenseByWeek(weekNumber);
         Double totalPayments = repo.getTotalPaymentsByWeek(weekNumber);
@@ -164,5 +190,35 @@ public class WeeklyPaymentsReceivedService {
         }
     }
 
+    public void recalculateWeeklyRefundPayment(Integer weeklyNumber, LocalDate date) {
+        // ✅ Sum of amount + extra_amount from daily entries
+        Double totalDailyExpenses = refundReceivedRepository.sumAmountByWeekAndDate(weeklyNumber, date);
+        if (totalDailyExpenses == null) {
+            totalDailyExpenses = 0.0;
+        }
 
+        // ✅ Find existing weekly expense row
+        WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
+                date, weeklyNumber, "Wage Refund"
+        );
+
+        if (existing != null) {
+            // Update amount only
+            existing.setAmount(totalDailyExpenses);
+            repo.save(existing);
+        } else {
+            // ✅ Create new row with contractorId & projectId
+            WeeklyPaymentsReceived newExpense = new WeeklyPaymentsReceived();
+            newExpense.setDate(date);
+            newExpense.setWeeklyNumber(weeklyNumber);
+            newExpense.setType("Wage Refund");
+            newExpense.setAmount(totalDailyExpenses);
+            newExpense.setCreatedAt(LocalDateTime.now());
+
+            // 🔹 Hardcode contractor & project
+            newExpense.setStatus(false);
+            newExpense.setPeriodStartDate(LocalDate.now());
+            repo.save(newExpense);
+        }
+    }
 }
