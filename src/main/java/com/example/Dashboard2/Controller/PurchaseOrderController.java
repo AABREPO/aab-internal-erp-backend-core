@@ -3,7 +3,6 @@ package com.example.Dashboard2.Controller;
 import com.example.Dashboard2.Entity.*;
 import com.example.Dashboard2.DTO.PurchaseOrderResponseDTO;
 import com.example.Dashboard2.DTO.PurchaseOrderSearchRequest;
-import com.example.Dashboard2.DTO.PaginatedResponse;
 import com.example.Dashboard2.Repository.PurchaseOrderAuditRepository;
 import com.example.Dashboard2.Service.PurchaseOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +72,11 @@ public class PurchaseOrderController {
     @GetMapping("/audit/getAll/{id}")
     public List<PurchaseOrderAudit> getAllPurchaseOrderAudit(@PathVariable Long id){
         return purchaseOrderService.getAllPurchaseOrderAudit(id);
+    }
+    // Get single purchase order (raw entity)
+    @GetMapping("/{id}")
+    public PurchaseOrder getPurchaseOrder(@PathVariable Long id) {
+        return purchaseOrderService.getPurchaseOrderById(id);
     }
     //edit full purchase order
     @PutMapping("/edit/{id}")
