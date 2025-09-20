@@ -26,5 +26,6 @@ public class ShopLinkWithTenant {
     private String rentAssignDate;
     private boolean isActive;
     private boolean shouldCollectAdvance = true;
+    private String shopClosureDate;
 
 }

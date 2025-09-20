@@ -123,7 +123,8 @@ public class TenantWithShopNoLinkService {
                     existingShop.setRentIncreasePercentage(incomingShop.getRentIncreasePercentage());
                     existingShop.setRentAssignDate(incomingShop.getRentAssignDate());
                     existingShop.setActive(incomingShop.isActive());
-                    existingShop.setShouldCollectAdvance(incomingShop.isShouldCollectAdvance()); // ✅ update here
+                    existingShop.setShouldCollectAdvance(incomingShop.isShouldCollectAdvance());
+                    existingShop.setShopClosureDate(incomingShop.getShopClosureDate());// ✅ update here
                 }
             }
 
@@ -145,4 +146,26 @@ public class TenantWithShopNoLinkService {
         tenantWithShopNoLinkRepository.deleteAll();
         return "All Tenant Deleted Successfully";
     }
+
+    public TenantWithShopNoLink updateShopClosureDateByTenantAndShopNo(String tenantName, String shopNo, String closureDate) {
+        List<TenantWithShopNoLink> tenants = tenantWithShopNoLinkRepository.findAll();
+
+        for (TenantWithShopNoLink tenant : tenants) {
+            if (tenant.getTenantName().equalsIgnoreCase(tenantName)) {
+                for (PropertyNameLinkWithTenant property : tenant.getProperty()) {
+                    for (ShopLinkWithTenant shop : property.getShops()) {
+                        if (shop.getShopNo().equalsIgnoreCase(shopNo)) {
+                            shop.setShopClosureDate(closureDate);
+                            shop.setActive(false); // ✅ optional: mark shop as inactive
+                            return tenantWithShopNoLinkRepository.save(tenant);
+                        }
+                    }
+                }
+                throw new RuntimeException("Shop No " + shopNo + " not found for tenant " + tenantName);
+            }
+        }
+        throw new RuntimeException("Tenant not found with name: " + tenantName);
+    }
+
+
 }

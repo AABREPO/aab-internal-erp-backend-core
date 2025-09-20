@@ -8,12 +8,13 @@ import java.util.List;
 
 @Repository
 public interface StaffAdvancePortalRepository extends JpaRepository<StaffAdvancePortal, Long> {
+
+    @Query("SELECT MAX(s.entryNo) FROM StaffAdvancePortal s")
+    Long findMaxEntryNo();
+    List<StaffAdvancePortal> findByEntryNo(Long entryNo);
     List<StaffAdvancePortal> findByEmployeeId(int employeeId);
     List<StaffAdvancePortal> findByType(String type);
     List<StaffAdvancePortal> findByEmployeeIdAndType(int employeeId, String type);
     List<StaffAdvancePortal> findByWeekNo(int weekNo);
     List<StaffAdvancePortal> findByEmployeeIdAndWeekNo(int employeeId, int weekNo);
-
-    @Query("SELECT MAX(s.entryNo) FROM StaffAdvancePortal s")
-    Long findMaxEntryNo();
 }

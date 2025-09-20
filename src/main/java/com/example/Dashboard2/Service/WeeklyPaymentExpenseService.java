@@ -34,7 +34,6 @@ public class WeeklyPaymentExpenseService {
         this.auditRepo = auditRepo;
     }
 
-
     private int getCurrentCalendarWeek() {
         LocalDate now = LocalDate.now();
         WeekFields weekFields = WeekFields.of(Locale.getDefault());

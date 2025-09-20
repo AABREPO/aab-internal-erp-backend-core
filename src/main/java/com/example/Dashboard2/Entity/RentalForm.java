@@ -24,6 +24,7 @@ public class RentalForm {
     private String attachedFile;
     private LocalDateTime timestamp;
     private String monthlyReportNumber;
+    private String shopClosureDate;
     public Long getId() {
         return id;
     }
@@ -126,5 +127,13 @@ public class RentalForm {
 
     public void setMonthlyReportNumber(String monthlyReportNumber) {
         this.monthlyReportNumber = monthlyReportNumber;
+    }
+
+    public String getShopClosureDate() {
+        return shopClosureDate;
+    }
+
+    public void setShopClosureDate(String shopClosureDate) {
+        this.shopClosureDate = shopClosureDate;
     }
 }

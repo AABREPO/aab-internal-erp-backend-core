@@ -1,7 +1,9 @@
 package com.example.Dashboard2.Controller;
 
 import com.example.Dashboard2.Entity.StaffAdvancePortal;
+import com.example.Dashboard2.Entity.StaffAdvancePortalAudit;
 import com.example.Dashboard2.Service.StaffAdvancePortalService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -59,9 +61,28 @@ public class StaffAdvancePortalController {
         return advance.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<List<StaffAdvancePortal>> updateStaffAdvance(
+            @PathVariable Long id,
+            @RequestBody StaffAdvancePortal staffAdvanceDetails,
+            @RequestParam String editedBy) {
+        try {
+            List<StaffAdvancePortal> updated = service.updateStaffAdvance(id, staffAdvanceDetails, editedBy);
+            return ResponseEntity.ok(updated);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/audit/history/{staffAdvancePortalId}")
+    public ResponseEntity<List<StaffAdvancePortalAudit>> getAuditHistory(@PathVariable Long staffAdvancePortalId) {
+        List<StaffAdvancePortalAudit> audits = service.getAuditHistory(staffAdvancePortalId);
+        return ResponseEntity.ok(audits);
     }
 }

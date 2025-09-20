@@ -31,7 +31,7 @@ public class SecurityConfig {
                                 ,"/advance_portal/googleUploader/**","/api/claim_payments/**","/api/weekly_payment_audit/**"
                                 ,"/api/weekly_types/**","/api/weekly_received_types/**","/api/labours-details/**","/api/daily-payments/**"
                                 ,"/api/refund_received/**","/api/daily_entry_audit/**","/api/employee_details/**","/api/cash-register/**"
-                                ,"/api/purposes/**","/api/staff-advance/**").permitAll()
+                                ,"/api/purposes/**","/api/staff-advance/**","/api/loans/**","/api/vendor-payments/**","/api/loan-purposes/**").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();
