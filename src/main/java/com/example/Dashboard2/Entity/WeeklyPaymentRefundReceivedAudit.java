@@ -25,12 +25,24 @@ public class WeeklyPaymentRefundReceivedAudit {
     private String oldDate;
     @JsonProperty("old_labour_id")
     private String oldLabourId;
+    @JsonProperty("old_employee_id")
+    private String oldEmployeeId;
+    @JsonProperty("old_vendor_id")
+    private String oldVendorId;
+    @JsonProperty("old_contractor_id")
+    private String oldContractorId;
     @JsonProperty("old_amount")
     private String oldAmount;
     @JsonProperty("new_date")
     private String newDate;
     @JsonProperty("new_labour_id")
     private String newLabourId;
+    @JsonProperty("new_employee_id")
+    private String newEmployeeId;
+    @JsonProperty("new_vendor_id")
+    private String newVendorId;
+    @JsonProperty("new_contractor_id")
+    private String newContractorId;
     @JsonProperty("new_amount")
     private String newAmount;
 
@@ -90,6 +102,30 @@ public class WeeklyPaymentRefundReceivedAudit {
         this.oldLabourId = oldLabourId;
     }
 
+    public String getOldEmployeeId() {
+        return oldEmployeeId;
+    }
+
+    public void setOldEmployeeId(String oldEmployeeId) {
+        this.oldEmployeeId = oldEmployeeId;
+    }
+
+    public String getOldVendorId() {
+        return oldVendorId;
+    }
+
+    public void setOldVendorId(String oldVendorId) {
+        this.oldVendorId = oldVendorId;
+    }
+
+    public String getOldContractorId() {
+        return oldContractorId;
+    }
+
+    public void setOldContractorId(String oldContractorId) {
+        this.oldContractorId = oldContractorId;
+    }
+
     public String getOldAmount() {
         return oldAmount;
     }
@@ -112,6 +148,30 @@ public class WeeklyPaymentRefundReceivedAudit {
 
     public void setNewLabourId(String newLabourId) {
         this.newLabourId = newLabourId;
+    }
+
+    public String getNewEmployeeId() {
+        return newEmployeeId;
+    }
+
+    public void setNewEmployeeId(String newEmployeeId) {
+        this.newEmployeeId = newEmployeeId;
+    }
+
+    public String getNewVendorId() {
+        return newVendorId;
+    }
+
+    public void setNewVendorId(String newVendorId) {
+        this.newVendorId = newVendorId;
+    }
+
+    public String getNewContractorId() {
+        return newContractorId;
+    }
+
+    public void setNewContractorId(String newContractorId) {
+        this.newContractorId = newContractorId;
     }
 
     public String getNewAmount() {

@@ -5,6 +5,7 @@ import com.example.Dashboard2.Repository.EmployeeDetailsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -13,26 +14,50 @@ public class EmployeeDetailsService {
     @Autowired
     private EmployeeDetailsRepository employeeDetailsRepository;
 
-    public EmployeeDetails saveEmployeeDetails(EmployeeDetails employeeDetails){
+    // Save employee details (automatically set timestamp if missing)
+    public EmployeeDetails saveEmployeeDetails(EmployeeDetails employeeDetails) {
+        if (employeeDetails.getTimestamp() == null) {
+            employeeDetails.setTimestamp(LocalDateTime.now());
+        }
         return employeeDetailsRepository.save(employeeDetails);
     }
-    public List<EmployeeDetails> getAllEmployeeDetails(){
+
+    // Get all employee details
+    public List<EmployeeDetails> getAllEmployeeDetails() {
         return employeeDetailsRepository.findAll();
     }
-    public void deleteEmployee(Long id){
+
+    // Delete a single employee by ID
+    public void deleteEmployee(Long id) {
         employeeDetailsRepository.deleteById(id);
     }
-    public void deleteAllEmployeeDetails(){
+
+    // Delete all employee records
+    public void deleteAllEmployeeDetails() {
         employeeDetailsRepository.deleteAll();
     }
-    public EmployeeDetails updateEmployeeDetails(Long id,EmployeeDetails updateEmployee){
+
+    // Update employee details
+    public EmployeeDetails updateEmployeeDetails(Long id, EmployeeDetails updatedEmployee) {
         return employeeDetailsRepository.findById(id)
                 .map(existingEmployee -> {
-                    existingEmployee.setEmployeeName(updateEmployee.getEmployeeName());
-                    existingEmployee.setEmployeeMobileNumber(updateEmployee.getEmployeeMobileNumber());
-                    existingEmployee.setRoleOfEmployee(updateEmployee.getRoleOfEmployee());
+                    existingEmployee.setTimestamp(LocalDateTime.now());
+                    existingEmployee.setEmployeeName(updatedEmployee.getEmployeeName());
+                    existingEmployee.setEmployeeId(updatedEmployee.getEmployeeId());
+                    existingEmployee.setEmployeeMobileNumber(updatedEmployee.getEmployeeMobileNumber());
+                    existingEmployee.setRoleOfEmployee(updatedEmployee.getRoleOfEmployee());
+                    existingEmployee.setAccountHolderName(updatedEmployee.getAccountHolderName());
+                    existingEmployee.setAccountNumber(updatedEmployee.getAccountNumber());
+                    existingEmployee.setBankName(updatedEmployee.getBankName());
+                    existingEmployee.setIfscCode(updatedEmployee.getIfscCode());
+                    existingEmployee.setBranch(updatedEmployee.getBranch());
+                    existingEmployee.setUpiId(updatedEmployee.getUpiId());
+                    existingEmployee.setGpayNumber(updatedEmployee.getGpayNumber());
+                    existingEmployee.setContactEmail(updatedEmployee.getContactEmail());
+                    existingEmployee.setAadhaarImageUrl(updatedEmployee.getAadhaarImageUrl());
+                    existingEmployee.setUpiQRImage(updatedEmployee.getUpiQRImage());
                     return employeeDetailsRepository.save(existingEmployee);
                 })
-                .orElseThrow(() -> new RuntimeException("Employee not found with id" + id));
+                .orElseThrow(() -> new RuntimeException("Employee not found with id " + id));
     }
 }

@@ -2,6 +2,8 @@ package com.example.Dashboard2.Service;
 
 import com.example.Dashboard2.Entity.AdvancePortal;
 import com.example.Dashboard2.Entity.AdvancePortalAudit;
+import com.example.Dashboard2.Entity.WeeklyPaymentRefundReceived;
+import com.example.Dashboard2.Entity.WeeklyPaymentsReceived;
 import com.example.Dashboard2.Repository.AdvancePortalAuditRepository;
 import com.example.Dashboard2.Repository.AdvancePortalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ public class AdvancePortalService {
 
     @Autowired
     private AdvancePortalAuditRepository auditRepository;
+
+    @Autowired
+    private WeeklyPaymentsReceivedService paymentsReceivedService;
 
     public List<AdvancePortal> getAllAdvancePortals() {
         return advancePortalRepository.findAll();
@@ -50,16 +55,16 @@ public class AdvancePortalService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid date format. Expected yyyy-MM-dd");
         }
-        return advancePortalRepository.save(advancePortal);
+        AdvancePortal saved = advancePortalRepository.save(advancePortal);
+        paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(saved.getWeekNo());
+        return saved;
     }
-
     public AdvancePortal updateAdvancePortal(Long id, AdvancePortal updatedPortal, String editedBy) {
         return advancePortalRepository.findById(id).map(existing -> {
             AdvancePortalAudit audit = new AdvancePortalAudit();
             audit.setAdvancePortalId(existing.getAdvancePortalId().intValue());
             audit.setEditedBy(editedBy);
             audit.setEditedDate(LocalDateTime.now());
-
             // Always set old values
             audit.setOldType(existing.getType());
             audit.setOldDate(existing.getDate());
@@ -73,7 +78,6 @@ public class AdvancePortalService {
             audit.setOldRefundAmount(String.valueOf(existing.getRefundAmount()));
             audit.setOldDescription(existing.getDescription());
             audit.setOldFileUrl(existing.getFileUrl());
-
             // Always set new values — if not changed, just keep same as old
             audit.setNewType(updatedPortal.getType() != null ? updatedPortal.getType() : existing.getType());
             audit.setNewDate(updatedPortal.getDate() != null ? updatedPortal.getDate() : existing.getDate());
@@ -87,10 +91,8 @@ public class AdvancePortalService {
             audit.setNewRefundAmount(String.valueOf(updatedPortal.getRefundAmount()));
             audit.setNewDescription(updatedPortal.getDescription() != null ? updatedPortal.getDescription() : existing.getDescription());
             audit.setNewFileUrl(updatedPortal.getFileUrl() != null ? updatedPortal.getFileUrl() : existing.getFileUrl());
-
             // Save audit entry
             auditRepository.save(audit);
-
             // Update entity
             existing.setType(updatedPortal.getType());
             existing.setDate(updatedPortal.getDate());
@@ -104,18 +106,16 @@ public class AdvancePortalService {
             existing.setRefundAmount(updatedPortal.getRefundAmount());
             existing.setDescription(updatedPortal.getDescription());
             existing.setFileUrl(updatedPortal.getFileUrl());
-
-            return advancePortalRepository.save(existing);
+            AdvancePortal saved = advancePortalRepository.save(existing);
+            paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(saved.getWeekNo());
+            return saved;
         }).orElse(null);
     }
-
-
-    public boolean deleteAdvancePortal(Long id) {
-        if (advancePortalRepository.existsById(id)) {
-            advancePortalRepository.deleteById(id);
-            return true;
-        }
-        return false;
+    public void deleteAdvancePortal(Long id) {
+        AdvancePortal existing = advancePortalRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Advance Portal not found"));
+        advancePortalRepository.deleteById(id);
+        paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(existing.getWeekNo());
     }
     public List<AdvancePortalAudit> getAuditHistory(int advancePortalId) {
         return auditRepository.findByAdvancePortalId(advancePortalId);
@@ -124,25 +124,19 @@ public class AdvancePortalService {
         if (file.isEmpty()) {
             return "File is empty. Please upload a valid SQL file.";
         }
-
         List<AdvancePortal> advancePortals = new ArrayList<>();
-
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
-
             StringBuilder sqlBuffer = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
                 sqlBuffer.append(line.trim()).append(" ");
             }
-
             String sqlContent = sqlBuffer.toString();
-
             // ✅ Updated regex to match `INSERT INTO advance_portal` with backticks, any case
             if (!sqlContent.matches("(?is).*INSERT\\s+INTO\\s+`?advance_portal`?.*")) {
                 return "No INSERT statements found in file.";
             }
-
             // Split into separate INSERT statements
             String[] statements = sqlContent.split("(?i);");
             for (String stmt : statements) {
@@ -150,41 +144,32 @@ public class AdvancePortalService {
                 if (stmt.isEmpty() || !stmt.matches("(?is)^INSERT\\s+INTO\\s+`?advance_portal`?.*")) {
                     continue;
                 }
-
                 // Extract column list
                 int colStart = stmt.indexOf("(");
                 int colEnd = stmt.indexOf(")", colStart);
                 if (colStart == -1 || colEnd == -1) continue;
-
                 String[] columns = stmt.substring(colStart + 1, colEnd)
                         .replace("`", "")
                         .split("\\s*,\\s*");
-
                 // Extract values section
                 int valuesIndex = stmt.toUpperCase().indexOf("VALUES");
                 if (valuesIndex == -1) continue;
                 String valuesPart = stmt.substring(valuesIndex + 6).trim();
-
                 // Remove trailing semicolon if any
                 if (valuesPart.endsWith(";")) {
                     valuesPart = valuesPart.substring(0, valuesPart.length() - 1);
                 }
-
                 // Remove outer parentheses for easier splitting
                 valuesPart = valuesPart.replaceFirst("^\\(", "").replaceFirst("\\)$", "");
-
                 // Split rows by `),(`
                 String[] records = valuesPart.split("\\)\\s*,\\s*\\(");
-
                 for (String record : records) {
                     String[] fields = record.split("\\s*,\\s*(?=(?:[^']*'[^']*')*[^']*$)"); // ✅ split ignoring commas inside quotes
                     Map<String, String> dataMap = new HashMap<>();
-
                     for (int i = 0; i < columns.length && i < fields.length; i++) {
                         String cleanVal = fields[i].trim().replaceAll("^'(.*)'$", "$1");
                         dataMap.put(columns[i], cleanVal.isEmpty() || cleanVal.equalsIgnoreCase("NULL") ? null : cleanVal);
                     }
-
                     AdvancePortal portal = new AdvancePortal();
                     portal.setTimestamp(LocalDateTime.now());
                     portal.setType(dataMap.get("type"));
@@ -200,7 +185,6 @@ public class AdvancePortalService {
                     portal.setRefundAmount(parseDoubleSafe(dataMap.get("refund_amount")));
                     portal.setDescription(dataMap.get("description"));
                     portal.setFileUrl(dataMap.get("file_url"));
-
                     // Auto calculate week number
                     if (portal.getDate() != null) {
                         try {
@@ -208,24 +192,19 @@ public class AdvancePortalService {
                             portal.setWeekNo(parsedDate.get(WeekFields.ISO.weekOfWeekBasedYear()));
                         } catch (Exception ignored) {}
                     }
-
                     advancePortals.add(portal);
                 }
             }
-
             if (advancePortals.isEmpty()) {
                 return "No valid records found in the file.";
             }
-
             advancePortalRepository.saveAll(advancePortals);
             return "File uploaded successfully! " + advancePortals.size() + " records saved.";
-
         } catch (Exception e) {
             e.printStackTrace();
             return "Failed to upload file: " + e.getMessage();
         }
     }
-
     private int parseIntSafe(String value) {
         try {
             return (value != null && !value.isEmpty()) ? Integer.parseInt(value) : 0;
@@ -233,7 +212,6 @@ public class AdvancePortalService {
             return 0;
         }
     }
-
     private double parseDoubleSafe(String value) {
         try {
             return (value != null && !value.isEmpty()) ? Double.parseDouble(value) : 0.0;
@@ -250,7 +228,6 @@ public class AdvancePortalService {
     }
     public AdvancePortal updateDescription(Long id, String newDescription) {
         Optional<AdvancePortal> optionalPortal = advancePortalRepository.findById(id);
-
         if (optionalPortal.isPresent()) {
             AdvancePortal portal = optionalPortal.get();
             portal.setDescription(newDescription);
@@ -258,5 +235,4 @@ public class AdvancePortalService {
         }
         return null;
     }
-
 }

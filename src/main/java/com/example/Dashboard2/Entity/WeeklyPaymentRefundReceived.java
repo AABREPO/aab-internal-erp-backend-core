@@ -20,12 +20,20 @@ public class WeeklyPaymentRefundReceived {
     private LocalDateTime createdAt;
     @JsonProperty("labour_id")
     private Long labourId;
+    @JsonProperty("employee_id")
+    private Long employeeId;
+    @JsonProperty("vendor_id")
+    private Long vendorId;
+    @JsonProperty("contractor_id")
+    private Long contractorId;
     @JsonProperty("amount")
     private Double amount;
     @JsonProperty("status")
     private boolean status;
     @JsonProperty("weekly_number")
     private Integer weeklyNumber;
+    @JsonProperty("staff_advance_portal_id")
+    private Long staffAdvancePortalId;
 
     public Long getId() {
         return id;
@@ -59,6 +67,30 @@ public class WeeklyPaymentRefundReceived {
         this.labourId = labourId;
     }
 
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public Long getVendorId() {
+        return vendorId;
+    }
+
+    public void setVendorId(Long vendorId) {
+        this.vendorId = vendorId;
+    }
+
+    public Long getContractorId() {
+        return contractorId;
+    }
+
+    public void setContractorId(Long contractorId) {
+        this.contractorId = contractorId;
+    }
+
     public Double getAmount() {
         return amount;
     }
@@ -81,5 +113,13 @@ public class WeeklyPaymentRefundReceived {
 
     public void setWeeklyNumber(Integer weeklyNumber) {
         this.weeklyNumber = weeklyNumber;
+    }
+
+    public Long getStaffAdvancePortalId() {
+        return staffAdvancePortalId;
+    }
+
+    public void setStaffAdvancePortalId(Long staffAdvancePortalId) {
+        this.staffAdvancePortalId = staffAdvancePortalId;
     }
 }

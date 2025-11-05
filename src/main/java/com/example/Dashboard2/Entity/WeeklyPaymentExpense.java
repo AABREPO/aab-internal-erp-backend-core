@@ -39,6 +39,20 @@ public class WeeklyPaymentExpense {
     private LocalDate periodEndDate;
     @JsonProperty("advance_portal_id")
     private Long advancePortalId;
+    @JsonProperty("staff_advance_portal_id")
+    private Long staffAdvancePortalId;
+    @JsonProperty("loan_portal_id")
+    private Long loanPortalId;
+    @JsonProperty("rent_management_id")
+    private Long rentManagementId;
+    @JsonProperty("expenses_entry_id")
+    private Long expensesEntryId;
+    @JsonProperty("vendor_payment_tracker_id")
+    private Long vendorPaymentTrackerId;
+    @JsonProperty("send_to_expenses_entry")
+    private boolean sendToExpensesEntry;
+    @JsonProperty("bill_copy_url")
+    private String billCopyUrl;
 
     // Getters and Setters
     public Long getId() {
@@ -126,5 +140,61 @@ public class WeeklyPaymentExpense {
 
     public void setAdvancePortalId(Long advancePortalId) {
         this.advancePortalId = advancePortalId;
+    }
+
+    public Long getStaffAdvancePortalId() {
+        return staffAdvancePortalId;
+    }
+
+    public void setStaffAdvancePortalId(Long staffAdvancePortalId) {
+        this.staffAdvancePortalId = staffAdvancePortalId;
+    }
+
+    public Long getLoanPortalId() {
+        return loanPortalId;
+    }
+
+    public void setLoanPortalId(Long loanPortalId) {
+        this.loanPortalId = loanPortalId;
+    }
+
+    public Long getRentManagementId() {
+        return rentManagementId;
+    }
+
+    public void setRentManagementId(Long rentManagementId) {
+        this.rentManagementId = rentManagementId;
+    }
+
+    public Long getExpensesEntryId() {
+        return expensesEntryId;
+    }
+
+    public void setExpensesEntryId(Long expensesEntryId) {
+        this.expensesEntryId = expensesEntryId;
+    }
+
+    public Long getVendorPaymentTrackerId() {
+        return vendorPaymentTrackerId;
+    }
+
+    public void setVendorPaymentTrackerId(Long vendorPaymentTrackerId) {
+        this.vendorPaymentTrackerId = vendorPaymentTrackerId;
+    }
+
+    public boolean isSendToExpensesEntry() {
+        return sendToExpensesEntry;
+    }
+
+    public void setSendToExpensesEntry(boolean sendToExpensesEntry) {
+        this.sendToExpensesEntry = sendToExpensesEntry;
+    }
+
+    public String getBillCopyUrl() {
+        return billCopyUrl;
+    }
+
+    public void setBillCopyUrl(String billCopyUrl) {
+        this.billCopyUrl = billCopyUrl;
     }
 }

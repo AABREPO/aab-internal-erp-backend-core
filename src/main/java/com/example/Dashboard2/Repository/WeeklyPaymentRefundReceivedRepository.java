@@ -16,7 +16,11 @@ public interface WeeklyPaymentRefundReceivedRepository extends JpaRepository<Wee
 
     @Query("SELECT COALESCE(SUM(e.amount), 0) " +
             "FROM WeeklyPaymentRefundReceived e " +
-            "WHERE e.weeklyNumber = :weeklyNumber AND e.date = :date")
+            "WHERE e.weeklyNumber = :weeklyNumber " +
+            "AND e.date = :date " +
+            "AND e.labourId IS NOT NULL " +
+            "AND e.vendorId IS NULL " +
+            "AND e.contractorId IS NULL")
     Double sumAmountByWeekAndDate(@Param("weeklyNumber") Integer weeklyNumber,
                                   @Param("date") LocalDate date);
 }

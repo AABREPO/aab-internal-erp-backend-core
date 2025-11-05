@@ -13,10 +13,13 @@ public class ClaimPaymentsService {
     @Autowired
     private ClaimPaymentsRepository claimPaymentsRepository;
 
-    public ClaimPayments saveClaimPayment(ClaimPayments claimPayments){
+    public ClaimPayments saveClaimPayment(ClaimPayments claimPayments) {
+        // Only set timestamp if it's not provided (i.e., null)
+        if (claimPayments.getTimestamp() == null) {
+            claimPayments.setTimestamp(java.time.LocalDateTime.now());
+        }
         return claimPaymentsRepository.save(claimPayments);
     }
-
     public List<ClaimPayments> getAllClaimPayments(){
         return claimPaymentsRepository.findAll();
     }

@@ -5,6 +5,7 @@ import com.example.Dashboard2.Entity.LoanPortalAudit;
 import com.example.Dashboard2.Repository.LoanPortalRepository;
 import com.example.Dashboard2.Repository.LoanPortalAuditRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,9 @@ import java.util.Optional;
 public class LoanPortalService {
     private final LoanPortalRepository repository;
     private final LoanPortalAuditRepository auditRepository;
+
+    @Autowired
+    private WeeklyPaymentsReceivedService paymentsReceivedService;
 
     public LoanPortalService(LoanPortalRepository repository, LoanPortalAuditRepository auditRepository) {
         this.repository = repository;
@@ -66,7 +70,9 @@ public class LoanPortalService {
                 return fromEntry;
             }
         }
-        return repository.save(loanPortal);
+        LoanPortal saved = repository.save(loanPortal);
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo());
+        return saved;
     }
 
     private LoanPortal createTransferEntry(LoanPortal source, boolean isFrom, String type) {
@@ -101,7 +107,6 @@ public class LoanPortalService {
         if (optionalLoan.isEmpty()) {
             throw new EntityNotFoundException("Loan portal not found with id: " + id);
         }
-
         LoanPortal existingLoan = optionalLoan.get();
 
         // --- Create audit record ---
@@ -109,7 +114,6 @@ public class LoanPortalService {
         audit.setLoanPortalId(existingLoan.getLoanPortalId());
         audit.setEditedBy(editedBy);
         audit.setEditedDate(LocalDateTime.now());
-
         audit.setOldType(existingLoan.getType());
         audit.setOldDate(existingLoan.getDate());
         audit.setOldVendorId(existingLoan.getVendorId());
@@ -137,19 +141,15 @@ public class LoanPortalService {
         audit.setNewLoanRefundAmount(updatedLoan.getLoanRefundAmount());
         audit.setNewDescription(updatedLoan.getDescription());
         audit.setNewFileUrl(updatedLoan.getFileUrl());
-
         auditRepository.save(audit);
-
         // --- Handle Transfer Type ---
         if ("Transfer".equalsIgnoreCase(updatedLoan.getType())) {
             boolean wasPurposePurpose =
                     existingLoan.getFromPurposeId() != null && existingLoan.getFromPurposeId() > 0 &&
                             existingLoan.getToPurposeId() != null && existingLoan.getToPurposeId() > 0;
-
             boolean isNowPurposeSite =
                     updatedLoan.getFromPurposeId() != null && updatedLoan.getFromPurposeId() > 0 &&
                             updatedLoan.getTransferProjectId() != null && updatedLoan.getTransferProjectId() > 0;
-
             // Case 1: Was Purpose->Purpose, now Purpose->Site
             if (wasPurposePurpose && isNowPurposeSite) {
                 List<LoanPortal> relatedEntries = repository.findByEntryNo(existingLoan.getEntryNo());
@@ -158,8 +158,7 @@ public class LoanPortalService {
                         repository.delete(entry);
                     }
                 }
-
-                existingLoan.setType("Transfer"); // ✅ Fix
+                existingLoan.setType("Transfer");
                 existingLoan.setDate(updatedLoan.getDate());
                 existingLoan.setVendorId(updatedLoan.getVendorId());
                 existingLoan.setContractorId(updatedLoan.getContractorId());
@@ -172,17 +171,15 @@ public class LoanPortalService {
                 existingLoan.setProjectId(0);
 
                 initializeDefaultsIfMissing(existingLoan);
-
                 repository.save(existingLoan);
+                // ✅ Trigger recalculation
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo());
                 return List.of(existingLoan);
             }
-
             // Case 2: Purpose -> Purpose
             if (updatedLoan.getFromPurposeId() != null && updatedLoan.getFromPurposeId() > 0 &&
                     updatedLoan.getToPurposeId() != null && updatedLoan.getToPurposeId() > 0) {
-
                 List<LoanPortal> relatedEntries = repository.findByEntryNo(existingLoan.getEntryNo());
-
                 LoanPortal fromEntry = relatedEntries.stream()
                         .filter(e -> e.getAmount() < 0)
                         .findFirst()
@@ -191,10 +188,8 @@ public class LoanPortalService {
                         .filter(e -> e.getAmount() >= 0)
                         .findFirst()
                         .orElseGet(() -> createTransferEntry(updatedLoan, false, "Purpose to Purpose"));
-
-                fromEntry.setType("Transfer"); // ✅ Fix
-                toEntry.setType("Transfer");   // ✅ Fix
-
+                fromEntry.setType("Transfer");
+                toEntry.setType("Transfer");
                 fromEntry.setDate(updatedLoan.getDate());
                 fromEntry.setVendorId(updatedLoan.getVendorId());
                 fromEntry.setContractorId(updatedLoan.getContractorId());
@@ -221,15 +216,14 @@ public class LoanPortalService {
 
                 fromEntry = repository.save(fromEntry);
                 toEntry = repository.save(toEntry);
-
+                // ✅ Trigger recalculation
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(fromEntry.getWeekNo());
                 return List.of(fromEntry, toEntry);
             }
-
             // Case 3: Purpose -> Site
             if (updatedLoan.getFromPurposeId() != null && updatedLoan.getFromPurposeId() > 0 &&
                     updatedLoan.getTransferProjectId() != null && updatedLoan.getTransferProjectId() > 0) {
-
-                existingLoan.setType("Transfer"); // ✅ Fix
+                existingLoan.setType("Transfer");
                 existingLoan.setDate(updatedLoan.getDate());
                 existingLoan.setVendorId(updatedLoan.getVendorId());
                 existingLoan.setContractorId(updatedLoan.getContractorId());
@@ -240,14 +234,13 @@ public class LoanPortalService {
                 existingLoan.setToPurposeId(0L);
                 existingLoan.setTransferProjectId(updatedLoan.getTransferProjectId());
                 existingLoan.setProjectId(0);
-
                 initializeDefaultsIfMissing(existingLoan);
-
                 repository.save(existingLoan);
+                // ✅ Trigger recalculation
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo());
                 return List.of(existingLoan);
             }
         }
-
         // --- Normal Update (Non-Transfer loans) ---
         if (!"Transfer".equalsIgnoreCase(updatedLoan.getType())
                 && "Transfer".equalsIgnoreCase(existingLoan.getType())) {
@@ -259,7 +252,6 @@ public class LoanPortalService {
                 }
             }
         }
-
         existingLoan.setType(updatedLoan.getType());
         existingLoan.setDate(updatedLoan.getDate());
         existingLoan.setAmount(updatedLoan.getAmount());
@@ -272,14 +264,12 @@ public class LoanPortalService {
         existingLoan.setProjectId(updatedLoan.getProjectId());
         existingLoan.setTransferProjectId(updatedLoan.getTransferProjectId());
         existingLoan.setEntryNo(updatedLoan.getEntryNo());
-
         initializeDefaultsIfMissing(existingLoan);
-
         existingLoan.setDescription(updatedLoan.getDescription());
         existingLoan.setFileUrl(updatedLoan.getFileUrl());
-
         repository.save(existingLoan);
-
+        // ✅ Trigger recalculation
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo());
         return List.of(existingLoan);
     }
 
@@ -291,8 +281,14 @@ public class LoanPortalService {
         return repository.findById(id);
     }
 
+    @Transactional
     public void deleteById(Long id) {
+        LoanPortal existing = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Loan portal not found with id: " + id));
+        int weekNumber = existing.getWeekNo();
         repository.deleteById(id);
+        // ✅ Trigger recalculation
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(weekNumber);
     }
 
     public List<LoanPortal> findByEntryNo(Long entryNo) {

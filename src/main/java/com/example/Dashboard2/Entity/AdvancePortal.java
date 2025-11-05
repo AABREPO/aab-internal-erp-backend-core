@@ -42,6 +42,8 @@ public class AdvancePortal {
     private String description;
     @JsonProperty("file_url")
     private String fileUrl;
+    @JsonProperty("not_allow_to_edit")
+    private boolean notAllowToEdit;
 
     public Long getAdvancePortalId() {
         return advancePortalId;
@@ -169,5 +171,13 @@ public class AdvancePortal {
 
     public void setFileUrl(String fileUrl) {
         this.fileUrl = fileUrl;
+    }
+
+    public boolean isNotAllowToEdit() {
+        return notAllowToEdit;
+    }
+
+    public void setNotAllowToEdit(boolean notAllowToEdit) {
+        this.notAllowToEdit = notAllowToEdit;
     }
 }

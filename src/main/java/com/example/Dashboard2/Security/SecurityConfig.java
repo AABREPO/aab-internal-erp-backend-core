@@ -8,7 +8,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import java.util.List;
 
 // SecurityConfig.java
@@ -31,7 +30,9 @@ public class SecurityConfig {
                                 ,"/advance_portal/googleUploader/**","/api/claim_payments/**","/api/weekly_payment_audit/**"
                                 ,"/api/weekly_types/**","/api/weekly_received_types/**","/api/labours-details/**","/api/daily-payments/**"
                                 ,"/api/refund_received/**","/api/daily_entry_audit/**","/api/employee_details/**","/api/cash-register/**"
-                                ,"/api/purposes/**","/api/staff-advance/**","/api/loans/**","/api/vendor-payments/**","/api/loan-purposes/**").permitAll()
+                                ,"/api/purposes/**","/api/staff-advance/**","/api/loans/**","/api/vendor-payments/**","/api/loan-purposes/**"
+                                ,"/api/rent-history/**","/api/weekly-payment-bills/**","/api/account-details/**", "/api/bank_type/**"
+                                ,"/api/bill-entry/**","/api/vendor-bill-tracker/**","/api/invoices/**","/api/eb-service-no/**").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();

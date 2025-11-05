@@ -26,6 +26,9 @@ public class StaffAdvancePortalService {
     @Autowired
     private StaffAdvancePortalAuditRepository auditRepository;
 
+    @Autowired
+    private WeeklyPaymentsReceivedService paymentsReceivedService;
+
     public Long getNextEntryNo() {
         Long maxEntryNo = repository.findMaxEntryNo();
         return (maxEntryNo == null) ? 1L : maxEntryNo + 1;
@@ -49,13 +52,14 @@ public class StaffAdvancePortalService {
         }
 
         staffAdvance.setTimestamp(LocalDateTime.now());
-
+        StaffAdvancePortal saved;
         if ("Transfer".equalsIgnoreCase(staffAdvance.getType())) {
             StaffAdvancePortal fromEntry = new StaffAdvancePortal();
             fromEntry.setEntryNo(staffAdvance.getEntryNo());
             fromEntry.setDate(staffAdvance.getDate());
             fromEntry.setWeekNo(staffAdvance.getWeekNo());
             fromEntry.setEmployeeId(staffAdvance.getEmployeeId());
+            fromEntry.setLabourId(staffAdvance.getLabourId());
             fromEntry.setType(staffAdvance.getType());
             fromEntry.setTimestamp(LocalDateTime.now());
             fromEntry.setFromPurposeId(staffAdvance.getFromPurposeId());
@@ -70,6 +74,7 @@ public class StaffAdvancePortalService {
             toEntry.setDate(staffAdvance.getDate());
             toEntry.setWeekNo(staffAdvance.getWeekNo());
             toEntry.setEmployeeId(staffAdvance.getEmployeeId());
+            toEntry.setLabourId(staffAdvance.getLabourId());
             toEntry.setType(staffAdvance.getType());
             toEntry.setTimestamp(LocalDateTime.now());
             toEntry.setFromPurposeId(staffAdvance.getToPurposeId());
@@ -82,11 +87,16 @@ public class StaffAdvancePortalService {
             repository.save(fromEntry);
             repository.save(toEntry);
 
-            return fromEntry;
+            saved = fromEntry;
         } else {
             staffAdvance.setToPurposeId(null);
-            return repository.save(staffAdvance);
+            saved = repository.save(staffAdvance);
         }
+
+        // ✅ trigger recalculation after save
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo());
+
+        return saved;
     }
 
     @Transactional
@@ -95,7 +105,6 @@ public class StaffAdvancePortalService {
         if (optionalAdvance.isEmpty()) {
             throw new EntityNotFoundException("Staff advance not found with id: " + id);
         }
-
         StaffAdvancePortal existingAdvance = optionalAdvance.get();
 
         // --- AUDIT RECORD ---
@@ -109,6 +118,8 @@ public class StaffAdvancePortalService {
         audit.setNewDate(updatedAdvance.getDate());
         audit.setOldEmployeeId(existingAdvance.getEmployeeId());
         audit.setNewEmployeeId(updatedAdvance.getEmployeeId());
+        audit.setOldLabourId(existingAdvance.getLabourId());
+        audit.setNewLabourId(updatedAdvance.getLabourId());
         audit.setOldFromPurposeId(existingAdvance.getFromPurposeId());
         audit.setNewFromPurposeId(updatedAdvance.getFromPurposeId());
         audit.setOldToPurposeId(existingAdvance.getToPurposeId());
@@ -123,7 +134,6 @@ public class StaffAdvancePortalService {
         audit.setNewDescription(updatedAdvance.getDescription());
         audit.setOldFileUrl(existingAdvance.getFileUrl());
         audit.setNewFileUrl(updatedAdvance.getFileUrl());
-
         auditRepository.save(audit);
 
         // --- WEEK NUMBER CALC ---
@@ -146,6 +156,7 @@ public class StaffAdvancePortalService {
             existingAdvance.setDate(updatedAdvance.getDate());
             existingAdvance.setWeekNo(updatedWeekNo);
             existingAdvance.setEmployeeId(updatedAdvance.getEmployeeId());
+            existingAdvance.setLabourId(updatedAdvance.getLabourId());
             existingAdvance.setFromPurposeId(updatedAdvance.getFromPurposeId());
             existingAdvance.setToPurposeId(updatedAdvance.getToPurposeId());
             existingAdvance.setStaffPaymentMode(updatedAdvance.getStaffPaymentMode());
@@ -153,7 +164,7 @@ public class StaffAdvancePortalService {
             existingAdvance.setStaffRefundAmount(0);
             existingAdvance.setDescription(updatedAdvance.getDescription());
             existingAdvance.setFileUrl(updatedAdvance.getFileUrl());
-            existingAdvance.setTimestamp(LocalDateTime.now()); // new transfer, so update timestamp
+            existingAdvance.setTimestamp(LocalDateTime.now());
             repository.save(existingAdvance);
 
             StaffAdvancePortal toEntry = new StaffAdvancePortal();
@@ -161,6 +172,7 @@ public class StaffAdvancePortalService {
             toEntry.setDate(updatedAdvance.getDate());
             toEntry.setWeekNo(updatedWeekNo);
             toEntry.setEmployeeId(updatedAdvance.getEmployeeId());
+            toEntry.setLabourId(updatedAdvance.getLabourId());
             toEntry.setType(updatedAdvance.getType());
             toEntry.setFromPurposeId(updatedAdvance.getToPurposeId());
             toEntry.setToPurposeId(updatedAdvance.getFromPurposeId());
@@ -169,18 +181,16 @@ public class StaffAdvancePortalService {
             toEntry.setDescription(updatedAdvance.getDescription());
             toEntry.setStaffRefundAmount(0);
             toEntry.setFileUrl(updatedAdvance.getFileUrl());
-            toEntry.setTimestamp(LocalDateTime.now()); // brand new entry, always set timestamp
+            toEntry.setTimestamp(LocalDateTime.now());
             repository.save(toEntry);
 
             resultEntries.add(existingAdvance);
             resultEntries.add(toEntry);
-            return resultEntries;
         }
 
         // --- TRANSFER -> NON-TRANSFER ---
-        if (wasTransferBefore && !willBeTransferNow) {
+        else if (wasTransferBefore && !willBeTransferNow) {
             List<StaffAdvancePortal> linkedEntries = repository.findByEntryNo(existingAdvance.getEntryNo());
-
             if (linkedEntries.size() == 2) {
                 StaffAdvancePortal firstEntry = linkedEntries.get(0);
                 StaffAdvancePortal secondEntry = linkedEntries.get(1);
@@ -192,6 +202,7 @@ public class StaffAdvancePortalService {
                 toKeep.setDate(updatedAdvance.getDate());
                 toKeep.setWeekNo(updatedWeekNo);
                 toKeep.setEmployeeId(updatedAdvance.getEmployeeId());
+                toKeep.setLabourId(updatedAdvance.getLabourId());
                 toKeep.setFromPurposeId(updatedAdvance.getFromPurposeId());
                 toKeep.setToPurposeId(null);
                 toKeep.setStaffPaymentMode(updatedAdvance.getStaffPaymentMode());
@@ -199,18 +210,17 @@ public class StaffAdvancePortalService {
                 toKeep.setStaffRefundAmount(updatedAdvance.getStaffRefundAmount());
                 toKeep.setDescription(updatedAdvance.getDescription());
                 toKeep.setFileUrl(updatedAdvance.getFileUrl());
-                toKeep.setTimestamp(LocalDateTime.now()); // switching type, so update timestamp
+                toKeep.setTimestamp(LocalDateTime.now());
                 repository.save(toKeep);
 
                 repository.delete(toDelete);
 
                 resultEntries.add(toKeep);
-                return resultEntries;
             }
         }
 
         // --- EDIT EXISTING TRANSFER ---
-        if (willBeTransferNow) {
+        else if (willBeTransferNow) {
             List<StaffAdvancePortal> linkedEntries = repository.findByEntryNo(existingAdvance.getEntryNo());
             for (StaffAdvancePortal entry : linkedEntries) {
                 if (entry.getAmount() < 0) { // FROM entry
@@ -218,6 +228,7 @@ public class StaffAdvancePortalService {
                     entry.setDate(updatedAdvance.getDate());
                     entry.setWeekNo(updatedWeekNo);
                     entry.setEmployeeId(updatedAdvance.getEmployeeId());
+                    entry.setLabourId(updatedAdvance.getLabourId());
                     entry.setFromPurposeId(updatedAdvance.getFromPurposeId());
                     entry.setToPurposeId(updatedAdvance.getToPurposeId());
                     entry.setStaffPaymentMode(updatedAdvance.getStaffPaymentMode());
@@ -225,7 +236,6 @@ public class StaffAdvancePortalService {
                     entry.setStaffRefundAmount(0);
                     entry.setDescription(updatedAdvance.getDescription());
                     entry.setFileUrl(updatedAdvance.getFileUrl());
-                    // KEEP original timestamp for transfer edits
                     repository.save(entry);
                     resultEntries.add(entry);
                 } else { // TO entry
@@ -233,6 +243,7 @@ public class StaffAdvancePortalService {
                     entry.setDate(updatedAdvance.getDate());
                     entry.setWeekNo(updatedWeekNo);
                     entry.setEmployeeId(updatedAdvance.getEmployeeId());
+                    entry.setLabourId(updatedAdvance.getLabourId());
                     entry.setFromPurposeId(updatedAdvance.getToPurposeId());
                     entry.setToPurposeId(updatedAdvance.getFromPurposeId());
                     entry.setStaffPaymentMode(updatedAdvance.getStaffPaymentMode());
@@ -240,31 +251,37 @@ public class StaffAdvancePortalService {
                     entry.setStaffRefundAmount(0);
                     entry.setDescription(updatedAdvance.getDescription());
                     entry.setFileUrl(updatedAdvance.getFileUrl());
-                    // KEEP original timestamp for transfer edits
                     repository.save(entry);
                     resultEntries.add(entry);
                 }
             }
-            return resultEntries;
         }
 
         // --- EDIT NON-TRANSFER ---
-        existingAdvance.setType(updatedAdvance.getType());
-        existingAdvance.setDate(updatedAdvance.getDate());
-        existingAdvance.setWeekNo(updatedWeekNo);
-        existingAdvance.setEmployeeId(updatedAdvance.getEmployeeId());
-        existingAdvance.setFromPurposeId(updatedAdvance.getFromPurposeId());
-        existingAdvance.setToPurposeId(null);
-        existingAdvance.setStaffPaymentMode(updatedAdvance.getStaffPaymentMode());
-        existingAdvance.setAmount(updatedAdvance.getAmount());
-        existingAdvance.setStaffRefundAmount(updatedAdvance.getStaffRefundAmount());
-        existingAdvance.setDescription(updatedAdvance.getDescription());
-        existingAdvance.setFileUrl(updatedAdvance.getFileUrl());
-        existingAdvance.setTimestamp(LocalDateTime.now()); // normal single-entry edit updates timestamp
-        repository.save(existingAdvance);
-        resultEntries.add(existingAdvance);
+        else {
+            existingAdvance.setType(updatedAdvance.getType());
+            existingAdvance.setDate(updatedAdvance.getDate());
+            existingAdvance.setWeekNo(updatedWeekNo);
+            existingAdvance.setEmployeeId(updatedAdvance.getEmployeeId());
+            existingAdvance.setLabourId(updatedAdvance.getLabourId());
+            existingAdvance.setFromPurposeId(updatedAdvance.getFromPurposeId());
+            existingAdvance.setToPurposeId(null);
+            existingAdvance.setStaffPaymentMode(updatedAdvance.getStaffPaymentMode());
+            existingAdvance.setAmount(updatedAdvance.getAmount());
+            existingAdvance.setStaffRefundAmount(updatedAdvance.getStaffRefundAmount());
+            existingAdvance.setDescription(updatedAdvance.getDescription());
+            existingAdvance.setFileUrl(updatedAdvance.getFileUrl());
+            existingAdvance.setTimestamp(LocalDateTime.now());
+            repository.save(existingAdvance);
+            resultEntries.add(existingAdvance);
+        }
+
+        // ✅ trigger recalculation once, for whichever branch was executed
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(updatedWeekNo);
+
         return resultEntries;
     }
+
 
     public List<StaffAdvancePortal> getAll() {
         return repository.findAll();
@@ -297,6 +314,19 @@ public class StaffAdvancePortalService {
     public void deleteById(Long id) {
         repository.deleteById(id);
     }
+    @Transactional
+    public void deleteStaffAdvancePortal(Long id) {
+        StaffAdvancePortal existing = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Staff Advance Portal not found with id: " + id));
+
+        int weekNumber = existing.getWeekNo();
+
+        repository.deleteById(id);
+
+        // ✅ trigger recalculation after delete
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(weekNumber);
+    }
+
 
     public List<StaffAdvancePortalAudit> getAuditHistory(Long staffAdvancePortalId) {
         return auditRepository.findByStaffAdvancePortalId(staffAdvancePortalId);

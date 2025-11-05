@@ -30,6 +30,10 @@ public class StaffAdvancePortalAudit {
     private int oldEmployeeId;
     @JsonProperty("new_employee_id")
     private int newEmployeeId;
+    @JsonProperty("old_labour_id")
+    private int oldLabourId;
+    @JsonProperty("new_labour_id")
+    private int newLabourId;
     @JsonProperty("old_from_purpose_id")
     private Integer oldFromPurposeId;
     @JsonProperty("new_from_purpose_id")
@@ -137,6 +141,22 @@ public class StaffAdvancePortalAudit {
 
     public void setNewEmployeeId(int newEmployeeId) {
         this.newEmployeeId = newEmployeeId;
+    }
+
+    public int getOldLabourId() {
+        return oldLabourId;
+    }
+
+    public void setOldLabourId(int oldLabourId) {
+        this.oldLabourId = oldLabourId;
+    }
+
+    public int getNewLabourId() {
+        return newLabourId;
+    }
+
+    public void setNewLabourId(int newLabourId) {
+        this.newLabourId = newLabourId;
     }
 
     public Integer getOldFromPurposeId() {

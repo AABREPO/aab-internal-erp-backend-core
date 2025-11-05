@@ -3,10 +3,7 @@ package com.example.Dashboard2.Service;
 import com.example.Dashboard2.Entity.WeeklyPaymentExpense;
 import com.example.Dashboard2.Entity.WeeklyPaymentsReceived;
 import com.example.Dashboard2.Entity.WeeklyPaymentsReceivedAudit;
-import com.example.Dashboard2.Repository.WeeklyPaymentExpenseRepository;
-import com.example.Dashboard2.Repository.WeeklyPaymentRefundReceivedRepository;
-import com.example.Dashboard2.Repository.WeeklyPaymentsReceivedAuditRepository;
-import com.example.Dashboard2.Repository.WeeklyPaymentsReceivedRepository;
+import com.example.Dashboard2.Repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,6 +26,15 @@ public class WeeklyPaymentsReceivedService {
 
     @Autowired
     private WeeklyPaymentRefundReceivedRepository refundReceivedRepository;
+
+    @Autowired
+    private AdvancePortalRepository advancePortalRepository;
+
+    @Autowired
+    private StaffAdvancePortalRepository staffAdvancePortalRepository;
+
+    @Autowired
+    private LoanPortalRepository loanPortalRepository;
 
     public WeeklyPaymentsReceivedService(WeeklyPaymentsReceivedRepository repo) {
         this.repo = repo;
@@ -196,12 +202,10 @@ public class WeeklyPaymentsReceivedService {
         if (totalDailyExpenses == null) {
             totalDailyExpenses = 0.0;
         }
-
         // ✅ Find existing weekly expense row
         WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
                 date, weeklyNumber, "Wage Refund"
         );
-
         if (existing != null) {
             // Update amount only
             existing.setAmount(totalDailyExpenses);
@@ -214,11 +218,91 @@ public class WeeklyPaymentsReceivedService {
             newExpense.setType("Wage Refund");
             newExpense.setAmount(totalDailyExpenses);
             newExpense.setCreatedAt(LocalDateTime.now());
-
             // 🔹 Hardcode contractor & project
             newExpense.setStatus(false);
             newExpense.setPeriodStartDate(LocalDate.now());
             repo.save(newExpense);
+        }
+    }
+
+    public void recalculateWeeklyAdvanceRefundPayment(int weekNumber) {
+        String today = LocalDate.now().toString(); // yyyy-MM-dd format
+        Double totalRefunds = advancePortalRepository.sumRefundsByWeekDateAndMode(
+                weekNumber, today, "Refund", "Cash"
+        );
+
+        if (totalRefunds != null && totalRefunds > 0) {
+            WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
+                    LocalDate.now(), weekNumber, "Project Advance Refund"
+            );
+            if (existing != null) {
+                existing.setAmount(totalRefunds);
+                repo.save(existing);
+            } else {
+                WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
+                newRefund.setDate(LocalDate.now());
+                newRefund.setWeeklyNumber(weekNumber);
+                newRefund.setType("Project Advance Refund");
+                newRefund.setAmount(totalRefunds);
+                newRefund.setCreatedAt(LocalDateTime.now());
+                newRefund.setStatus(false);
+                newRefund.setPeriodStartDate(LocalDate.now());
+                repo.save(newRefund);
+            }
+        }
+    }
+
+    public void recalculateWeeklyStaffAdvanceRefundPayment(int weekNumber) {
+        String today = LocalDate.now().toString(); // yyyy-MM-dd format
+        Double totalRefunds = staffAdvancePortalRepository.sumRefundsByWeekDateAndMode(
+                weekNumber, today, "Refund", "Cash"
+        );
+
+        if (totalRefunds != null && totalRefunds > 0) {
+            WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
+                    LocalDate.now(), weekNumber, "Staff Advance Refund"
+            );
+            if (existing != null) {
+                existing.setAmount(totalRefunds);
+                repo.save(existing);
+            } else {
+                WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
+                newRefund.setDate(LocalDate.now());
+                newRefund.setWeeklyNumber(weekNumber);
+                newRefund.setType("Staff Advance Refund");
+                newRefund.setAmount(totalRefunds);
+                newRefund.setCreatedAt(LocalDateTime.now());
+                newRefund.setStatus(false);
+                newRefund.setPeriodStartDate(LocalDate.now());
+                repo.save(newRefund);
+            }
+        }
+    }
+
+    public void recalculateWeeklyLoanAdvanceRefundPayment(int weekNumber) {
+        String today = LocalDate.now().toString(); // yyyy-MM-dd format
+        Double totalRefunds = loanPortalRepository.sumRefundsByWeekDateAndMode(
+                weekNumber, today, "Refund", "Cash"
+        );
+
+        if (totalRefunds != null && totalRefunds > 0) {
+            WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
+                    LocalDate.now(), weekNumber, "Loan Refund"
+            );
+            if (existing != null) {
+                existing.setAmount(totalRefunds);
+                repo.save(existing);
+            } else {
+                WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
+                newRefund.setDate(LocalDate.now());
+                newRefund.setWeeklyNumber(weekNumber);
+                newRefund.setType("Loan Refund");
+                newRefund.setAmount(totalRefunds);
+                newRefund.setCreatedAt(LocalDateTime.now());
+                newRefund.setStatus(false);
+                newRefund.setPeriodStartDate(LocalDate.now());
+                repo.save(newRefund);
+            }
         }
     }
 }

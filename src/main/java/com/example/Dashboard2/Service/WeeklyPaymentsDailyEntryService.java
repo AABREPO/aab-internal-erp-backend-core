@@ -99,6 +99,7 @@ public class WeeklyPaymentsDailyEntryService {
         existing.setProjectId(updatedDailyEntry.getProjectId());
         existing.setQuantity(updatedDailyEntry.getQuantity());
         existing.setDescription(updatedDailyEntry.getDescription());
+        existing.setStaffAdvancePortalId(updatedDailyEntry.getStaffAdvancePortalId());
         if (updatedDailyEntry.getFileUrl() != null && !updatedDailyEntry.getFileUrl().isEmpty()) {
             existing.setFileUrl(updatedDailyEntry.getFileUrl());
         }
@@ -121,6 +122,7 @@ public class WeeklyPaymentsDailyEntryService {
         existing.setProjectId(updatedDailyEntry.getProjectId());
         existing.setQuantity(updatedDailyEntry.getQuantity());
         existing.setDescription(updatedDailyEntry.getDescription());
+        existing.setStaffAdvancePortalId(updatedDailyEntry.getStaffAdvancePortalId());
         if (updatedDailyEntry.getFileUrl() != null && !updatedDailyEntry.getFileUrl().isEmpty()) {
             existing.setFileUrl(updatedDailyEntry.getFileUrl());
         }

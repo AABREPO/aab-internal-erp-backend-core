@@ -46,6 +46,8 @@ public class WeeklyPaymentsDailyEntry {
     private Integer weeklyNumber;
     @JsonProperty("file_url")
     private String fileUrl;
+    @JsonProperty("staff_advance_portal_id")
+    private Long staffAdvancePortalId;
 
     public WeeklyPaymentsDailyEntry() {}
 
@@ -178,5 +180,13 @@ public class WeeklyPaymentsDailyEntry {
 
     public void setFileUrl(String fileUrl) {
         this.fileUrl = fileUrl;
+    }
+
+    public Long getStaffAdvancePortalId() {
+        return staffAdvancePortalId;
+    }
+
+    public void setStaffAdvancePortalId(Long staffAdvancePortalId) {
+        this.staffAdvancePortalId = staffAdvancePortalId;
     }
 }

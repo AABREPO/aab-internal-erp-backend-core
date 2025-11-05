@@ -4,7 +4,9 @@ import com.example.Dashboard2.Entity.EmployeeDetails;
 import com.example.Dashboard2.Service.EmployeeDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -14,25 +16,50 @@ public class EmployeeDetailsController {
     @Autowired
     private EmployeeDetailsService employeeDetailsService;
 
-    @PostMapping("/save")
-    public EmployeeDetails saveEmployeeDetails(@RequestBody EmployeeDetails employeeDetails){
+    // Save Employee Details (supports optional QR image upload)
+    @PostMapping(value = "/save", consumes = {"multipart/form-data"})
+    public EmployeeDetails saveEmployeeDetails(
+            @RequestPart("employeeDetails") EmployeeDetails employeeDetails,
+            @RequestPart(value = "upi_qr_image", required = false) MultipartFile qrImage) throws IOException {
+
+        if (qrImage != null && !qrImage.isEmpty()) {
+            employeeDetails.setUpiQRImage(qrImage.getBytes());
+        }
+
         return employeeDetailsService.saveEmployeeDetails(employeeDetails);
     }
+
+    // Get all Employee Details
     @GetMapping("/getAll")
-    public List<EmployeeDetails> getAllEmployeeDetails(){
+    public List<EmployeeDetails> getAllEmployeeDetails() {
         return employeeDetailsService.getAllEmployeeDetails();
     }
+
+    // Delete Employee by ID
     @DeleteMapping("/delete/{id}")
-    public void deleteEmployee(@PathVariable Long id){
+    public String deleteEmployee(@PathVariable Long id) {
         employeeDetailsService.deleteEmployee(id);
+        return "Employee with ID " + id + " deleted successfully.";
     }
+
+    // Delete all Employees
     @DeleteMapping("/deleteAll")
-    public String deleteAllEmployeeDetails(){
+    public String deleteAllEmployeeDetails() {
         employeeDetailsService.deleteAllEmployeeDetails();
-        return "All Employee List Deleted Successfully";
+        return "All Employee records deleted successfully.";
     }
-    @PutMapping("/edit/{id}")
-    public EmployeeDetails updateEmployee( @PathVariable Long id, @RequestBody EmployeeDetails employeeDetails){
+
+    // Update Employee (supports optional QR image update)
+    @PutMapping(value = "/edit/{id}", consumes = {"multipart/form-data"})
+    public EmployeeDetails updateEmployee(
+            @PathVariable Long id,
+            @RequestPart("employeeDetails") EmployeeDetails employeeDetails,
+            @RequestPart(value = "upi_qr_image", required = false) MultipartFile qrImage) throws IOException {
+
+        if (qrImage != null && !qrImage.isEmpty()) {
+            employeeDetails.setUpiQRImage(qrImage.getBytes());
+        }
+
         return employeeDetailsService.updateEmployeeDetails(id, employeeDetails);
     }
 }

@@ -53,9 +53,7 @@ public class RentalFormService implements RentalFormServices {
         if(optionalRentalForm.isPresent()){
             RentalForm existingRentForm = optionalRentalForm.get();
             String editedBy = rentFormEdit.getEditedBy();
-
             saveRentAudit(existingRentForm, rentFormEdit, editedBy);
-
             existingRentForm.setFormType(rentFormEdit.getFormType());
             existingRentForm.setAmount(rentFormEdit.getAmount());
             existingRentForm.setAttachedFile(rentFormEdit.getAttachedFile());
@@ -65,19 +63,18 @@ public class RentalFormService implements RentalFormServices {
             existingRentForm.setTenantName(rentFormEdit.getTenantName());
             existingRentForm.setRefundAmount(rentFormEdit.getRefundAmount());
             existingRentForm.setShopNo(rentFormEdit.getShopNo());
-
+            existingRentForm.setShopNoId(rentFormEdit.getShopNoId());
+            existingRentForm.setTenantNameId(rentFormEdit.getTenantNameId());
             rentalFormRepository.save(existingRentForm);
             return true;
         }else {
             return false;
         }
     }
-
     @Override
     public List<RentFormAudit> getRentalFormById(Long rentId){
         return rentFormAuditRepository.findAllByRentFormId(rentId);
     }
-
     private void saveRentAudit(RentalForm oldData, RentFormEdit newData, String editedBy){
         RentFormAudit audit = new RentFormAudit();
         audit.setRentFormId(oldData.getId());
@@ -86,31 +83,26 @@ public class RentalFormService implements RentalFormServices {
         // Save the old and new value for each field, even if it has not changed
         audit.setOldFormType(oldData.getFormType());
         audit.setNewFormType(newData.getFormType());
-
         audit.setOldPaymentMode(oldData.getPaymentMode());
         audit.setNewPaymentMode(newData.getPaymentMode());
-
         audit.setOldAmount(oldData.getAmount());
         audit.setNewAmount(newData.getAmount());
-
         audit.setOldShopNo(oldData.getShopNo());
         audit.setNewShopNo(newData.getShopNo());
-
         audit.setOldAttachedFile(oldData.getAttachedFile());
         audit.setNewAttachedFile(newData.getAttachedFile());
-
         audit.setOldRefundAmount(oldData.getRefundAmount());
         audit.setNewRefundAmount(newData.getRefundAmount());
-
         audit.setOldForTheMonthOf(oldData.getForTheMonthOf());
         audit.setNewForTheMonthOf(newData.getForTheMonthOf());
-
         audit.setOldTenantName(oldData.getTenantName());
         audit.setNewTenantName(newData.getTenantName());
-
         audit.setOldPaidOnDate(oldData.getPaidOnDate());
         audit.setNewPaidOnDate(newData.getPaidOnDate());
-
+        audit.setOldShopNoId(oldData.getShopNoId());
+        audit.setNewShopNoId(newData.getShopNoId());
+        audit.setOldTenantNameId(oldData.getTenantNameId());
+        audit.setNewTenantNameId(newData.getTenantNameId());
         rentFormAuditRepository.save(audit);
     }
 
@@ -123,13 +115,11 @@ public class RentalFormService implements RentalFormServices {
             audit.setRentFormId(existingRentForm.getId());
             audit.setEditedBy(editedBy);
             audit.setEditedDate(LocalDateTime.now());
-
             if (existingRentForm.getFormType() !=null){
                 audit.setOldFormType(existingRentForm.getFormType());
                 audit.setNewFormType(null);
                 existingRentForm.setFormType(null);
             }
-
             if (existingRentForm.getAmount() !=null){
                 audit.setOldAmount(existingRentForm.getAmount());
                 audit.setNewAmount(null);
@@ -170,6 +160,16 @@ public class RentalFormService implements RentalFormServices {
                 audit.setNewShopNo(null);
                 existingRentForm.setShopNo(null);
             }
+            if (existingRentForm.getShopNoId() !=null){
+                audit.setOldShopNoId(existingRentForm.getShopNoId());
+                audit.setNewShopNoId(null);
+                existingRentForm.setShopNoId(null);
+            }
+            if (existingRentForm.getTenantNameId() !=null){
+                audit.setOldTenantNameId(existingRentForm.getTenantNameId());
+                audit.setNewTenantNameId(null);
+                existingRentForm.setTenantNameId(null);
+            }
             rentFormAuditRepository.save(audit);
             rentalFormRepository.save(existingRentForm);
             return true;
@@ -181,27 +181,20 @@ public class RentalFormService implements RentalFormServices {
         if (file.isEmpty()) {
             return "File is empty. Please upload a valid CSV file.";
         }
-
         List<RentalForm> rentalForms = new ArrayList<>();
-
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             boolean isFirstLine = true;
-
             while ((line = reader.readLine()) != null) {
                 if (isFirstLine) {
                     isFirstLine = false; // Skip header row
                     continue;
                 }
-
                 String[] fields = line.split(",", -1); // -1 to keep trailing empty fields
-
                 if (fields.length < 9) {
                     continue; // skip incomplete rows
                 }
-
                 RentalForm rentalForm = new RentalForm();
-
                 rentalForm.setEno(Integer.parseInt(fields[4].trim()));
                 rentalForm.setFormType(fields[8].trim());
                 rentalForm.setShopNo(fields[1].trim());
@@ -210,35 +203,25 @@ public class RentalFormService implements RentalFormServices {
                 rentalForm.setPaidOnDate(fields[5].trim());
                 rentalForm.setPaymentMode(fields[7].trim());
                 rentalForm.setForTheMonthOf(fields[6].trim());
-
-                // Optional timestamp parse (or set to now if not present)
                 try {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-M-uuuu[ H:mm[:ss]]");
                     rentalForm.setTimestamp(LocalDateTime.parse(fields[0].trim(), formatter));
                 } catch (Exception e) {
                     rentalForm.setTimestamp(LocalDateTime.now());
                 }
-
-                // Optional: monthlyReportNumber
                 if (fields.length > 11) {
                     rentalForm.setMonthlyReportNumber(fields[11].trim());
                 }
-
                 rentalForms.add(rentalForm);
             }
-
             if (rentalForms.isEmpty()) {
                 return "No valid records found in the file.";
             }
-
             rentalFormRepository.saveAll(rentalForms);
             return "CSV uploaded successfully! " + rentalForms.size() + " records saved.";
-
         } catch (Exception e) {
             e.printStackTrace();
             return "Failed to process CSV file: " + e.getMessage();
         }
     }
-
 }
-

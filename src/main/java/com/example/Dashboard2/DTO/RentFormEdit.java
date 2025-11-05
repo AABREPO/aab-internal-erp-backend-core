@@ -6,7 +6,9 @@ public class RentFormEdit {
     private Long id;
     private int eno;
     private String formType;
+    private Long shopNoId;
     private String shopNo;
+    private Long tenantNameId;
     private String tenantName;
     private String amount;
     private String refundAmount;
@@ -41,12 +43,28 @@ public class RentFormEdit {
         this.formType = formType;
     }
 
+    public Long getShopNoId() {
+        return shopNoId;
+    }
+
+    public void setShopNoId(Long shopNoId) {
+        this.shopNoId = shopNoId;
+    }
+
     public String getShopNo() {
         return shopNo;
     }
 
     public void setShopNo(String shopNo) {
         this.shopNo = shopNo;
+    }
+
+    public Long getTenantNameId() {
+        return tenantNameId;
+    }
+
+    public void setTenantNameId(Long tenantNameId) {
+        this.tenantNameId = tenantNameId;
     }
 
     public String getTenantName() {

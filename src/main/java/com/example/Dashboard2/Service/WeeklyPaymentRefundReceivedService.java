@@ -45,31 +45,48 @@ public class WeeklyPaymentRefundReceivedService {
 
         paymentsReceivedService.recalculateWeeklyRefundPayment(existing.getWeeklyNumber(), existing.getDate());
     }
-    public WeeklyPaymentRefundReceived editRefundReceived(Long id, String username, WeeklyPaymentRefundReceived updatedRefundReceived){
+    public WeeklyPaymentRefundReceived editRefundReceived(Long id, String username, WeeklyPaymentRefundReceived updatedRefundReceived) {
         WeeklyPaymentRefundReceived existing = refundReceivedRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Refund Received not found"));
-        //save Audit Before Updating
+
+        // Save audit before updating
         WeeklyPaymentRefundReceivedAudit audit = new WeeklyPaymentRefundReceivedAudit();
         audit.setWeeklyPaymentRefundReceivedId(existing.getId());
         audit.setEditedBy(username);
         audit.setEditedDate(LocalDateTime.now());
-        audit.setWeeklyNumber(existing.getWeeklyNumber() !=null ? existing.getWeeklyNumber().toString() : null);
+        audit.setWeeklyNumber(existing.getWeeklyNumber() != null ? existing.getWeeklyNumber().toString() : null);
 
-        audit.setOldDate(existing.getDate() !=null ? existing.getDate().toString() : null);
-        audit.setOldAmount(existing.getAmount() !=null ? existing.getAmount().toString() : null);
-        audit.setOldLabourId(existing.getLabourId() !=null ? existing.getLabourId().toString() : null);
+        audit.setOldDate(existing.getDate() != null ? existing.getDate().toString() : null);
+        audit.setOldAmount(existing.getAmount() != null ? existing.getAmount().toString() : null);
+        audit.setOldLabourId(existing.getLabourId() != null ? existing.getLabourId().toString() : null);
+        audit.setOldEmployeeId(existing.getEmployeeId() != null ? existing.getEmployeeId().toString() : null);
+        audit.setOldVendorId(existing.getVendorId() != null ? existing.getVendorId().toString() : null);
+        audit.setOldContractorId(existing.getContractorId() != null ? existing.getContractorId().toString() : null);
 
-        audit.setNewDate(existing.getDate() !=null ? existing.getDate().toString() : null);
-        audit.setNewAmount(updatedRefundReceived.getAmount() != null? updatedRefundReceived.getAmount().toString() : null);
-        audit.setNewLabourId(updatedRefundReceived.getLabourId() !=null ? updatedRefundReceived.getLabourId().toString() : null);
+        audit.setNewDate(updatedRefundReceived.getDate() != null ? updatedRefundReceived.getDate().toString() : null);
+        audit.setNewAmount(updatedRefundReceived.getAmount() != null ? updatedRefundReceived.getAmount().toString() : null);
+        audit.setNewLabourId(updatedRefundReceived.getLabourId() != null ? updatedRefundReceived.getLabourId().toString() : null);
+        audit.setNewEmployeeId(updatedRefundReceived.getEmployeeId() != null ? updatedRefundReceived.getEmployeeId().toString() : null);
+        audit.setNewVendorId(updatedRefundReceived.getVendorId() != null ? updatedRefundReceived.getVendorId().toString() : null);
+        audit.setNewContractorId(updatedRefundReceived.getContractorId() != null ? updatedRefundReceived.getContractorId().toString() : null);
 
         auditRepository.save(audit);
 
-        //Apply Updates
+        // Apply updates
         existing.setAmount(updatedRefundReceived.getAmount());
         existing.setLabourId(updatedRefundReceived.getLabourId());
+        existing.setStaffAdvancePortalId(updatedRefundReceived.getStaffAdvancePortalId());
+        existing.setEmployeeId(updatedRefundReceived.getEmployeeId());
+        existing.setVendorId(updatedRefundReceived.getVendorId());
+        existing.setContractorId(updatedRefundReceived.getContractorId());
+
         WeeklyPaymentRefundReceived saved = refundReceivedRepository.save(existing);
-        paymentsReceivedService.recalculateWeeklyRefundPayment(saved.getWeeklyNumber(), saved.getDate());
+
+        // ✅ Only trigger recalculation if labourId is present AND vendor/contractor are null
+        if (saved.getLabourId() != null && saved.getVendorId() == null && saved.getContractorId() == null) {
+            paymentsReceivedService.recalculateWeeklyRefundPayment(saved.getWeeklyNumber(), saved.getDate());
+        }
+
         return saved;
     }
 }

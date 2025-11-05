@@ -74,11 +74,17 @@ public class StaffAdvancePortalController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteStaffAdvancePortal(@PathVariable Long id) {
+        service.deleteStaffAdvancePortal(id);
+        return ResponseEntity.noContent().build(); // 204 if deleted successfully
+    }
+
 
     @GetMapping("/audit/history/{staffAdvancePortalId}")
     public ResponseEntity<List<StaffAdvancePortalAudit>> getAuditHistory(@PathVariable Long staffAdvancePortalId) {

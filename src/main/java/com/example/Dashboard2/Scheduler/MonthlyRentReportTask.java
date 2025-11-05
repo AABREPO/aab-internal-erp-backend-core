@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class MonthlyRentReportTask {
     private MonthlyRentReportRepo monthlyRentReportRepo;
 
     @Scheduled(cron = "0 0 21 L * ?")
-    public void generateAndUploadMonthlyRentReport(){
+    public void generateAndUploadMonthlyRentReports(){
         try {
             int reportNumber = monthlyRentReportService.getNextMonthlyReportNumber();
             List<RentalForm> entries = rentalFormRepository.findCurrentMonthEntries();
@@ -46,9 +47,9 @@ public class MonthlyRentReportTask {
 
                 // Set refundAmount if Shop Closure, else normal amount
                 if ("Shop Closure".equalsIgnoreCase(r.getFormType())) {
-                    reports.setAmount(r.getRefundAmount());
+                    reports.setAmount(r.getRefundAmount() != null ? r.getRefundAmount() : "0");
                 } else {
-                    reports.setAmount(r.getAmount());
+                    reports.setAmount(r.getAmount() != null ? r.getAmount() : "0");
                 }
 
                 reports.setForTheMonthOf(r.getForTheMonthOf());
@@ -73,4 +74,5 @@ public class MonthlyRentReportTask {
             e.printStackTrace();
         }
     }
+
 }

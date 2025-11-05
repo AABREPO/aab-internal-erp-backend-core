@@ -39,6 +39,10 @@ public class StaffAdvancePortal {
     private String description;
     @JsonProperty("file_url")
     private String fileUrl;
+    @JsonProperty(("labour_id"))
+    private int labourId;
+    @JsonProperty("not_allow_to_edit")
+    private boolean notAllowToEdit;
 
     // Getters and setters
     public Long getStaffAdvancePortalId() {
@@ -124,5 +128,21 @@ public class StaffAdvancePortal {
     }
     public void setFileUrl(String fileUrl) {
         this.fileUrl = fileUrl;
+    }
+
+    public int getLabourId() {
+        return labourId;
+    }
+
+    public void setLabourId(int labourId) {
+        this.labourId = labourId;
+    }
+
+    public boolean isNotAllowToEdit() {
+        return notAllowToEdit;
+    }
+
+    public void setNotAllowToEdit(boolean notAllowToEdit) {
+        this.notAllowToEdit = notAllowToEdit;
     }
 }

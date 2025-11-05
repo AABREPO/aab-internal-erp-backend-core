@@ -56,11 +56,8 @@ public class AdvancePortalController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteAdvancePortal(@PathVariable Long id) {
-        if (advancePortalService.deleteAdvancePortal(id)) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        advancePortalService.deleteAdvancePortal(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/history/{id}")

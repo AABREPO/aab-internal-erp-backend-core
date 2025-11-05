@@ -39,6 +39,8 @@ public class RentalFormController {
             rentalForm.setForTheMonthOf(rentalFormDto.getForTheMonthOf());
             rentalForm.setTimestamp(LocalDateTime.now());
             rentalForm.setAttachedFile(rentalFormDto.getAttachedFile());
+            rentalForm.setShopNoId(rentalFormDto.getShopNoId());
+            rentalForm.setTenantNameId(rentalFormDto.getTenantNameId());
             rentalFormService.saveRentalForm(rentalForm);
             return ResponseEntity.status(HttpStatus.CREATED).body("Rental Form Submitted Successfully");
 

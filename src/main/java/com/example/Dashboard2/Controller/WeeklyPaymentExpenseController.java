@@ -52,4 +52,20 @@ public class WeeklyPaymentExpenseController {
     public void deleteWeeklyPaymentExpense(@PathVariable Long id){
         service.deleteWeeklyPaymentExpense(id);
     }
+    @PutMapping("/{id}/send-to-expenses")
+    public ResponseEntity<WeeklyPaymentExpense> markAsSentToExpensesEntry(@PathVariable Long id) {
+        WeeklyPaymentExpense updatedExpense = service.markAsSentToExpensesEntry(id);
+        return ResponseEntity.ok(updatedExpense);
+    }
+
+    @PutMapping("/{id}/bill-copy-url")
+    public ResponseEntity<WeeklyPaymentExpense> updateBillCopyUrl(
+            @PathVariable Long id,
+            @RequestBody String billCopyUrl) {
+
+        WeeklyPaymentExpense updatedExpense = service.updateBillCopyUrl(id, billCopyUrl);
+        return ResponseEntity.ok(updatedExpense);
+    }
+
+
 }
