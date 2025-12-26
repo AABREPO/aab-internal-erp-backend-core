@@ -31,6 +31,12 @@ public class WeeklyPaymentsDailyEntryController {
         List<WeeklyPaymentsDailyEntry> entries = service.getEntriesByDate(localDate);
         return ResponseEntity.ok(entries);
     }
+    @GetMapping("/getAll")
+    public ResponseEntity<List<WeeklyPaymentsDailyEntry>> getAllEntries(){
+        List<WeeklyPaymentsDailyEntry> dailyEntries = service.getAllEntries();
+        return ResponseEntity.ok().body(dailyEntries);
+    }
+
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteEntry(@PathVariable Long id) {
         service.deleteEntry(id);
@@ -45,4 +51,10 @@ public class WeeklyPaymentsDailyEntryController {
     public ResponseEntity<WeeklyPaymentsDailyEntry> editDailyEntrys(@PathVariable Long id, @RequestParam String username, @RequestBody WeeklyPaymentsDailyEntry updatedDailyEntry){
         return ResponseEntity.ok(service.editDailyExpenses(id, username, updatedDailyEntry));
     }
+    @PutMapping("/send-to-expenses/{id}")
+    public ResponseEntity<WeeklyPaymentsDailyEntry> markAsSentToExpenses(@PathVariable Long id) {
+        WeeklyPaymentsDailyEntry updated = service.markAsSentToExpenses(id);
+        return ResponseEntity.ok(updated);
+    }
+
 }

@@ -53,7 +53,6 @@ public class AdvancePortalController {
         }
     }
 
-
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteAdvancePortal(@PathVariable Long id) {
         advancePortalService.deleteAdvancePortal(id);
@@ -81,6 +80,13 @@ public class AdvancePortalController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PutMapping("/allow/{id}")
+    public AdvancePortal updateAllowToEdit(
+            @PathVariable Long id,
+            @RequestParam boolean allow) {
+        return advancePortalService.updateAllowToEdit(id, allow);
     }
 
 }

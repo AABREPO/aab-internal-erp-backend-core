@@ -24,54 +24,31 @@ public class PurchaseOrderController {
     public List<PurchaseOrder> getAllPurchaseOrders() {
         return purchaseOrderService.getAllPurchaseOrders();
     }
-
-    @GetMapping("/audit/getAll/{id}")
-    public List<PurchaseOrderAudit> getAllPurchaseOrderAudit(@PathVariable Long id){
-        return purchaseOrderService.getAllPurchaseOrderAudit(id);
+    //Get last 250 data from purchase orders
+    @GetMapping("/get/latest")
+    public List<PurchaseOrder> getLatestPurchaseOrders(){
+        return purchaseOrderService.getLast250PurchaseOrders();
     }
     //edit full purchase order
     @PutMapping("/edit/{id}")
     public PurchaseOrder updatePurchaseOrder(@PathVariable Long id, @RequestBody PurchaseOrder updatedOrder) {
         return purchaseOrderService.editPurchaseOrders(id, updatedOrder);
     }
-    @GetMapping("/{id}/audit")
-    public List<PurchaseOrderAudit> getPurchaseOrderAudit(@PathVariable Long id) {
-        return purchaseOrderService.getAllPurchaseOrderAudit(id);
-    }
-    @PutMapping("/{id}/edit")
-    public PurchaseOrder editPurchaseOrder(
-            @PathVariable Long id,
-            @RequestBody PurchaseOrder updatedOrder,
-            @RequestParam String editedBy) {
-        return purchaseOrderService.editPurchaseOrder(id, updatedOrder, editedBy);
-    }
-    //edit and monitor the changes in purchase order table audit
-    @PutMapping("/editPurchaseTable/full/{poId}")
-    public PurchaseOrder updateFullTable(
-            @PathVariable Long poId,
-            @RequestBody List<PurchaseOrderTable> updatedTable,
-            @RequestParam String editedBy) {
-        return purchaseOrderService.updateFullTable(poId, updatedTable, editedBy);
-    }
-
     // Delete purchase order by ID
     @DeleteMapping("/delete/{id}")
     public String deletePurchaseOrder(@PathVariable Long id) {
         return purchaseOrderService.deletePurchaseOrder(id);
     }
-
     // Delete all purchase orders
     @DeleteMapping("/deleteAll")
     public String deleteAllPurchaseOrders() {
         return purchaseOrderService.deleteAllPurchaseOrders();
     }
-
     @PutMapping("/markDeleted/{id}")
     public ResponseEntity<PurchaseOrder> markDeleted(@PathVariable Long id, @RequestParam boolean deleteStatus) {
         PurchaseOrder updated = purchaseOrderService.toggleDeletedStatus(id, deleteStatus);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
-
     // get the vendorName count
     @GetMapping("/countByVendor")
     public Long getCountByVendor(@RequestParam int vendorId) {
@@ -82,19 +59,27 @@ public class PurchaseOrderController {
     public PurchaseOrder updatePoNotes(@PathVariable Long id, @RequestBody PurchaseOrderNotes updatedNote) {
         return purchaseOrderService.updatePoNotes(id, updatedNote);
     }
-    @GetMapping("/audit/{poId}")
-    public List<PurchaseOrderTableAudit> getAuditHistory(@PathVariable Long poId) {
-        return purchaseOrderService.findByPurchaseOrderId(poId);
+    @PutMapping("/edit_with_history/{id}")
+    public PurchaseOrder editPurchaseOrder(
+            @PathVariable Long id,
+            @RequestBody PurchaseOrder purchaseOrder,
+            @RequestParam String changedBy
+    ) {
+        return purchaseOrderService.editPurchaseOrderWithHistory(
+                id,
+                purchaseOrder,
+                changedBy
+        );
     }
-    @GetMapping("/audit/full")
-    public List<PurchaseOrderAudit> getFullAuditHistory() {
-        return poAuditRepository.findAll();
+    @GetMapping("/history/{id}")
+    public List<PurchaseOrderHistory> getPurchaseOrderHistory(@PathVariable Long id) {
+        return purchaseOrderService.getPurchaseOrderHistory(id);
     }
-    @GetMapping("/audit/full/{poId}")
-    public List<PurchaseOrderAudit> getFullPoAuditById(@PathVariable Long poId) {
-        return poAuditRepository.findAll()
-                .stream()
-                .filter(a -> a.getPurchaseOrderId().equals(poId))
-                .toList();
+    @PutMapping("/payment/complete")
+    public ResponseEntity<?> completePayment( @RequestParam int vendorId, @RequestParam String eno) {
+        purchaseOrderService.completePayment(vendorId, eno);
+        return ResponseEntity.ok(
+                "Payment marked as complete for vendorId=" + vendorId + ", eno=" + eno
+        );
     }
 }

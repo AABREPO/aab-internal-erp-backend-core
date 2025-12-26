@@ -22,6 +22,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/po_model/model_bulkUpload").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/weekly-expenses/update/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/daily-payments/send-to-expenses/**").permitAll()
                         .requestMatchers("/api/properties/**","/api/tenant-groups/**","/api/agreements/**","/api/payment_mode/**"
                                 ,"/api/rental_forms/**","/api/tenantShop/**", "/api/po_model/**", "/api/po_brand/**", "/api/po_category/**"
                                 ,"/api/po_itemNames/**","/api/po_type/**","/api/purchase_orders/**","/api/site_incharge/**"
@@ -32,7 +34,12 @@ public class SecurityConfig {
                                 ,"/api/refund_received/**","/api/daily_entry_audit/**","/api/employee_details/**","/api/cash-register/**"
                                 ,"/api/purposes/**","/api/staff-advance/**","/api/loans/**","/api/vendor-payments/**","/api/loan-purposes/**"
                                 ,"/api/rent-history/**","/api/weekly-payment-bills/**","/api/account-details/**", "/api/bank_type/**"
-                                ,"/api/bill-entry/**","/api/vendor-bill-tracker/**","/api/invoices/**","/api/eb-service-no/**").permitAll()
+                                ,"/api/bill-entry/**","/api/vendor-bill-tracker/**","/api/invoices/**","/api/eb-service-no/**","/api/support_staff/**"
+                                ,"/api/utility-telecom-purpose/**","/api/utility-telecom-service-provider/**","/api/utility-telecom-service-type/**"
+                                ,"/api/subscription-service-type/**","/api/subscription-service-provider/**","/api/subscription-purpose/**"
+                                ,"/api/amc-service-type/**","/api/amc-service-provider/**","/api/amc-purpose/**","/api/utility-telecom/**"
+                                ,"/api/utility-subscription/**","/api/utility-frequency/**","/api/tenant_link_shop/**","/api/edit_requests/**"
+                                ,"/api/data_correction/**","/api/data_correction/monitoring/{tableName}/{dataId}","/api/vendor_carry_forward/**").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();
@@ -41,9 +48,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000","http://localhost:5173", "https://dashboard.aabuilders.in")); // ✅ specific origins
+        config.setAllowedOrigins(List.of("http://localhost:3000","http://localhost:5173", "https://dashboard.aabuilders.in","https://po.aabuilders.in")); // ✅ specific origins
         config.setAllowCredentials(true);
         config.setAllowedHeaders(List.of("*"));
+        config.addAllowedHeader("*");
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

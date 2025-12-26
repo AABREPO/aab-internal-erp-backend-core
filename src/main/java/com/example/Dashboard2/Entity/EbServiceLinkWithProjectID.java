@@ -60,4 +60,5 @@ public class EbServiceLinkWithProjectID {
     public void setEbServiceNo(String ebServiceNo) {
         this.ebServiceNo = ebServiceNo;
     }
+
 }

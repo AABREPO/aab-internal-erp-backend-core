@@ -28,6 +28,7 @@ public class RentalForm {
     private String monthlyReportNumber;
     private String shopClosureDate;
 
+
     public Long getId() {
         return id;
     }

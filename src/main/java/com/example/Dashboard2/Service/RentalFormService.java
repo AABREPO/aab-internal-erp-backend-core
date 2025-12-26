@@ -7,6 +7,7 @@ import com.example.Dashboard2.Entity.RentalForm;
 import com.example.Dashboard2.Repository.MonthlyRentReportRepo;
 import com.example.Dashboard2.Repository.RentFormAuditRepository;
 import com.example.Dashboard2.Repository.RentalFormRepository;
+import com.opencsv.CSVReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -177,51 +179,88 @@ public class RentalFormService implements RentalFormServices {
             return false;
         }
     }
+
+
+    @Override
     public String uploadOldRentalFormData(MultipartFile file) {
+
         if (file.isEmpty()) {
             return "File is empty. Please upload a valid CSV file.";
         }
+
         List<RentalForm> rentalForms = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
+
+        try (CSVReader csvReader = new CSVReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
+            String[] fields;
             boolean isFirstLine = true;
-            while ((line = reader.readLine()) != null) {
+
+            // Flexible timestamp format (accepts 8:42 or 18:42)
+            DateTimeFormatter csvFormatter = new DateTimeFormatterBuilder()
+                    .appendPattern("dd-MM-yyyy ")
+                    .appendPattern("H:mm")   // H = 1 or 2 digit hour
+                    .toFormatter();
+
+            while ((fields = csvReader.readNext()) != null) {
+
                 if (isFirstLine) {
-                    isFirstLine = false; // Skip header row
+                    isFirstLine = false;
                     continue;
                 }
-                String[] fields = line.split(",", -1); // -1 to keep trailing empty fields
-                if (fields.length < 9) {
-                    continue; // skip incomplete rows
-                }
+
+                if (fields.length < 13) continue;
+
                 RentalForm rentalForm = new RentalForm();
-                rentalForm.setEno(Integer.parseInt(fields[4].trim()));
-                rentalForm.setFormType(fields[8].trim());
-                rentalForm.setShopNo(fields[1].trim());
-                rentalForm.setTenantName(fields[2].trim());
-                rentalForm.setAmount(fields[3].trim());
-                rentalForm.setPaidOnDate(fields[5].trim());
-                rentalForm.setPaymentMode(fields[7].trim());
-                rentalForm.setForTheMonthOf(fields[6].trim());
-                try {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-M-uuuu[ H:mm[:ss]]");
-                    rentalForm.setTimestamp(LocalDateTime.parse(fields[0].trim(), formatter));
-                } catch (Exception e) {
+
+                rentalForm.setAmount(fields[0].trim());
+                rentalForm.setEno(Integer.parseInt(fields[1].trim()));
+                rentalForm.setForTheMonthOf(fields[2].trim());
+                rentalForm.setFormType(fields[3].trim());
+                rentalForm.setPaidOnDate(fields[4].trim());
+                rentalForm.setPaymentMode(fields[5].trim());
+                rentalForm.setRefundAmount(fields[6].trim());
+                rentalForm.setShopNo(fields[7].trim());
+                rentalForm.setTenantName(fields[8].trim());
+                rentalForm.setMonthlyReportNumber(fields[9].trim());
+                rentalForm.setShopNoId(parseLong(fields[10]));
+                rentalForm.setTenantNameId(parseLong(fields[11]));
+
+                // ---------------- Parse Timestamp ----------------
+                String timestampStr = fields[12].trim();
+
+                if (timestampStr != null && !timestampStr.isEmpty()) {
+                    try {
+                        LocalDateTime parsedTimestamp =
+                                LocalDateTime.parse(timestampStr, csvFormatter);
+                        rentalForm.setTimestamp(parsedTimestamp);
+                    } catch (Exception e) {
+                        System.out.println("Invalid timestamp: " + timestampStr);
+                        rentalForm.setTimestamp(LocalDateTime.now());
+                    }
+                } else {
                     rentalForm.setTimestamp(LocalDateTime.now());
                 }
-                if (fields.length > 11) {
-                    rentalForm.setMonthlyReportNumber(fields[11].trim());
-                }
+
                 rentalForms.add(rentalForm);
             }
-            if (rentalForms.isEmpty()) {
-                return "No valid records found in the file.";
-            }
+
             rentalFormRepository.saveAll(rentalForms);
+
             return "CSV uploaded successfully! " + rentalForms.size() + " records saved.";
+
         } catch (Exception e) {
             e.printStackTrace();
             return "Failed to process CSV file: " + e.getMessage();
         }
     }
+
+    private Long parseLong(String value) {
+        try {
+            return Long.parseLong(value.trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 }

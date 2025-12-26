@@ -7,7 +7,6 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -23,44 +22,36 @@ public class StaffAdvancePortalController {
         StaffAdvancePortal savedAdvance = service.save(staffAdvance);
         return ResponseEntity.ok(savedAdvance);
     }
-
     @GetMapping("/all")
     public ResponseEntity<List<StaffAdvancePortal>> getAll() {
         return ResponseEntity.ok(service.getAll());
     }
-
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<List<StaffAdvancePortal>> getByEmployee(@PathVariable int employeeId) {
         return ResponseEntity.ok(service.getByEmployeeId(employeeId));
     }
-
     @GetMapping("/type/{type}")
     public ResponseEntity<List<StaffAdvancePortal>> getByType(@PathVariable String type) {
         return ResponseEntity.ok(service.getByType(type));
     }
-
     @GetMapping("/employee/{employeeId}/type/{type}")
     public ResponseEntity<List<StaffAdvancePortal>> getByEmployeeAndType(@PathVariable int employeeId, @PathVariable String type) {
         return ResponseEntity.ok(service.getByEmployeeIdAndType(employeeId, type));
     }
-
     @GetMapping("/week/{weekNo}")
     public ResponseEntity<List<StaffAdvancePortal>> getByWeek(@PathVariable int weekNo) {
         return ResponseEntity.ok(service.getByWeekNo(weekNo));
     }
-
     @GetMapping("/employee/{employeeId}/week/{weekNo}")
     public ResponseEntity<List<StaffAdvancePortal>> getByEmployeeAndWeek(@PathVariable int employeeId,
                                                                          @PathVariable int weekNo) {
         return ResponseEntity.ok(service.getByEmployeeIdAndWeekNo(employeeId, weekNo));
     }
-
     @GetMapping("/{id}")
     public ResponseEntity<StaffAdvancePortal> getById(@PathVariable Long id) {
         Optional<StaffAdvancePortal> advance = service.getById(id);
         return advance.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
-
     @PutMapping("/{id}")
     public ResponseEntity<List<StaffAdvancePortal>> updateStaffAdvance(
             @PathVariable Long id,
@@ -73,7 +64,6 @@ public class StaffAdvancePortalController {
             return ResponseEntity.notFound().build();
         }
     }
-
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         service.deleteById(id);
@@ -84,11 +74,13 @@ public class StaffAdvancePortalController {
         service.deleteStaffAdvancePortal(id);
         return ResponseEntity.noContent().build(); // 204 if deleted successfully
     }
-
-
     @GetMapping("/audit/history/{staffAdvancePortalId}")
     public ResponseEntity<List<StaffAdvancePortalAudit>> getAuditHistory(@PathVariable Long staffAdvancePortalId) {
         List<StaffAdvancePortalAudit> audits = service.getAuditHistory(staffAdvancePortalId);
         return ResponseEntity.ok(audits);
+    }
+    @PutMapping("/allow/{id}")
+    public StaffAdvancePortal updateAllowToEdit(@PathVariable Long id, @RequestParam boolean allow){
+        return service.updateAllowToEdit(id, allow);
     }
 }

@@ -1,11 +1,9 @@
 package com.example.Dashboard2.Controller;
 
-
 import com.example.Dashboard2.Entity.WeeklyPaymentExpense;
 import com.example.Dashboard2.Service.WeeklyPaymentExpenseService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -17,7 +15,6 @@ public class WeeklyPaymentExpenseController {
     public WeeklyPaymentExpenseController(WeeklyPaymentExpenseService service) {
         this.service = service;
     }
-
     @GetMapping("/week/{weekNumber}")
     public List<WeeklyPaymentExpense> getByWeek(@PathVariable Integer weekNumber) {
         return service.getExpensesByWeek(weekNumber);
@@ -26,7 +23,6 @@ public class WeeklyPaymentExpenseController {
     public WeeklyPaymentExpense saveDailyExpense(@RequestBody WeeklyPaymentExpense expense) {
         return service.saveOrUpdateDailyExpense(expense);
     }
-
     @PostMapping("/save")
     public WeeklyPaymentExpense save(@RequestBody WeeklyPaymentExpense expense) {
         return service.saveExpense(expense);
@@ -47,25 +43,24 @@ public class WeeklyPaymentExpenseController {
             @RequestBody WeeklyPaymentExpense updatedExpense) {
         return ResponseEntity.ok(service.editExpense(id, username,updatedExpense));
     }
-
     @DeleteMapping("/delete/{id}")
     public void deleteWeeklyPaymentExpense(@PathVariable Long id){
         service.deleteWeeklyPaymentExpense(id);
+    }
+    @DeleteMapping("delete_by_id/{id}")
+    public void deleteWeeklyPaymentExpenseWithoutCarryForward(@PathVariable Long id){
+        service.deleteWeeklyPaymentExpenseWithoutCarryForward(id);
     }
     @PutMapping("/{id}/send-to-expenses")
     public ResponseEntity<WeeklyPaymentExpense> markAsSentToExpensesEntry(@PathVariable Long id) {
         WeeklyPaymentExpense updatedExpense = service.markAsSentToExpensesEntry(id);
         return ResponseEntity.ok(updatedExpense);
     }
-
     @PutMapping("/{id}/bill-copy-url")
     public ResponseEntity<WeeklyPaymentExpense> updateBillCopyUrl(
             @PathVariable Long id,
             @RequestBody String billCopyUrl) {
-
         WeeklyPaymentExpense updatedExpense = service.updateBillCopyUrl(id, billCopyUrl);
         return ResponseEntity.ok(updatedExpense);
     }
-
-
 }

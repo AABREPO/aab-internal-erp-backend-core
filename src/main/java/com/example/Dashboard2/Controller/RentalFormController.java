@@ -6,6 +6,7 @@ import com.example.Dashboard2.DTO.RentalFormDto;
 import com.example.Dashboard2.Entity.MonthlyRentReports;
 import com.example.Dashboard2.Entity.RentFormAudit;
 import com.example.Dashboard2.Entity.RentalForm;
+import com.example.Dashboard2.Scheduler.MonthlyRentReportTask;
 import com.example.Dashboard2.Service.RentalFormService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,9 @@ public class RentalFormController {
 
     @Autowired
     private RentalFormService rentalFormService;
+
+    @Autowired
+    private MonthlyRentReportTask monthlyRentReportTask;
 
     @PostMapping("/save")
     public ResponseEntity<String>addRentalForm(@RequestBody RentalFormDto rentalFormDto){
@@ -123,6 +127,48 @@ public class RentalFormController {
             return ResponseEntity.ok("Rent data cleared Successfully");
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rent Form data not found");
+        }
+    }
+
+    /**
+     * Manual endpoint to generate missed monthly rent reports
+     * Example: POST /api/rental_forms/generate-missed-report?year=2024&month=10
+     * This will generate a report for October 2024 data (entries where forTheMonthOf = "2024-10")
+     * 
+     * @param year The year (e.g., 2024)
+     * @param month The month (1-12, e.g., 10 for October)
+     * @param forceAll Optional parameter. If true, includes all entries regardless of report number status
+     * @return ResponseEntity with success or error message
+     */
+    @PostMapping("/generate-missed-report")
+    public ResponseEntity<String> generateMissedReport(
+            @RequestParam int year,
+            @RequestParam int month,
+            @RequestParam(required = false, defaultValue = "false") boolean forceAll) {
+        try {
+            if (month < 1 || month > 12) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid month. Month must be between 1 and 12.");
+            }
+            
+            String result = monthlyRentReportTask.generateMissedMonthlyRentReport(year, month, forceAll);
+            
+            // Check for successful report generation (even if upload failed)
+            if (result.contains("Report #") && result.contains("generated successfully")) {
+                // Report was created, even if upload failed - return 200 with message
+                return ResponseEntity.ok(result);
+            } else if (result.contains("Missed report generated successfully")) {
+                // Full success with upload
+                return ResponseEntity.ok(result);
+            } else if (result.contains("No rental entries found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
+            } else {
+                // Actual error occurred
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error generating missed report: " + e.getMessage());
         }
     }
 }

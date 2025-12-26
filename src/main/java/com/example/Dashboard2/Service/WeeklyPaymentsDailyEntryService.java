@@ -131,5 +131,14 @@ public class WeeklyPaymentsDailyEntryService {
         return saved;
     }
 
+    public WeeklyPaymentsDailyEntry markAsSentToExpenses(Long id) {
+        WeeklyPaymentsDailyEntry entry = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Daily Entry not found"));
+
+        entry.setSendToExpensesEntry(true);
+
+        return repository.save(entry);
+    }
+
 
 }

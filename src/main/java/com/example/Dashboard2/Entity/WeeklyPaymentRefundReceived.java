@@ -34,6 +34,8 @@ public class WeeklyPaymentRefundReceived {
     private Integer weeklyNumber;
     @JsonProperty("staff_advance_portal_id")
     private Long staffAdvancePortalId;
+    @JsonProperty("loan_portal_id")
+    private Long loanPortalId;
 
     public Long getId() {
         return id;
@@ -121,5 +123,13 @@ public class WeeklyPaymentRefundReceived {
 
     public void setStaffAdvancePortalId(Long staffAdvancePortalId) {
         this.staffAdvancePortalId = staffAdvancePortalId;
+    }
+
+    public Long getLoanPortalId() {
+        return loanPortalId;
+    }
+
+    public void setLoanPortalId(Long loanPortalId) {
+        this.loanPortalId = loanPortalId;
     }
 }

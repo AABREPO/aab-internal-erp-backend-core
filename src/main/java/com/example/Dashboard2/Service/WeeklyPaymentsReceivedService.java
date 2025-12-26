@@ -17,22 +17,16 @@ import java.util.Locale;
 @Service
 public class WeeklyPaymentsReceivedService {
     private final WeeklyPaymentsReceivedRepository repo;
-
     @Autowired
     private WeeklyPaymentExpenseRepository expenseRepo;
-
     @Autowired
     private WeeklyPaymentsReceivedAuditRepository auditRepo;
-
     @Autowired
     private WeeklyPaymentRefundReceivedRepository refundReceivedRepository;
-
     @Autowired
     private AdvancePortalRepository advancePortalRepository;
-
     @Autowired
     private StaffAdvancePortalRepository staffAdvancePortalRepository;
-
     @Autowired
     private LoanPortalRepository loanPortalRepository;
 
@@ -51,12 +45,9 @@ public class WeeklyPaymentsReceivedService {
     public List<WeeklyPaymentsReceived> getAllWeeklyPaymentsReceived(){
         return repo.findAll();
     }
-
     public List<WeeklyPaymentsReceived> getPaymentsByWeek(Integer weekNumber) {
         return repo.findByWeeklyNumber(weekNumber);
     }
-
-
     public WeeklyPaymentsReceived savePayment(WeeklyPaymentsReceived payment) {
         Integer currentWeek = repo.findMaxWeeklyNumber();
         if (currentWeek == null) {
@@ -74,83 +65,63 @@ public class WeeklyPaymentsReceivedService {
         }
         return repo.save(payment);
     }
-
     @Transactional
     public void closeCurrentPeriod(Integer weekNumber) {
         repo.closePeriod(weekNumber, LocalDate.now());
     }
-
     public WeeklyPaymentsReceived editPayment(Long id,String username, WeeklyPaymentsReceived updatedPayment) {
         WeeklyPaymentsReceived existing = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
-
         // 🔹 Save Audit Before Updating
         WeeklyPaymentsReceivedAudit audit = new WeeklyPaymentsReceivedAudit();
         audit.setWeeklyPaymentsReceivedId(existing.getId());
         audit.setEditedBy(username); // replace with logged-in username
         audit.setEditedDate(LocalDateTime.now());
         audit.setWeeklyNumber(existing.getWeeklyNumber() != null ? existing.getWeeklyNumber().toString() : null);
-
         audit.setOldDate(existing.getDate() != null ? existing.getDate().toString() : null);
         audit.setOldAmount(existing.getAmount() != null ? existing.getAmount().toString() : null);
         audit.setOldType(existing.getType());
-
         audit.setNewDate(updatedPayment.getDate() != null ? updatedPayment.getDate().toString() : null);
         audit.setNewAmount(updatedPayment.getAmount() != null ? updatedPayment.getAmount().toString() : null);
         audit.setNewType(updatedPayment.getType());
-
         auditRepo.save(audit);
-
         // 🔹 Apply Update
         existing.setAmount(updatedPayment.getAmount());
         existing.setType(updatedPayment.getType());
         existing.setDate(updatedPayment.getDate());
-
         return repo.save(existing);
     }
-
-
     public Integer getMaxWeeklyNumber() {
         return repo.findMaxWeeklyNumber();
     }
-
     public WeeklyPaymentsReceived updatePayment(Long id, String username ,WeeklyPaymentsReceived updatedPayment) {
         Integer lastClosedWeek = repo.findLastClosedWeekNumber();
         WeeklyPaymentsReceived existing = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
-
         if (!existing.getWeeklyNumber().equals(lastClosedWeek)) {
             throw new IllegalStateException("Only the last closed week's payments can be edited.");
         }
-
         // 🔹 Save Audit Before Updating
         WeeklyPaymentsReceivedAudit audit = new WeeklyPaymentsReceivedAudit();
         audit.setWeeklyPaymentsReceivedId(existing.getId());
         audit.setEditedBy(username);
         audit.setEditedDate(LocalDateTime.now());
         audit.setWeeklyNumber(existing.getWeeklyNumber().toString());
-
         audit.setOldDate(existing.getDate() != null ? existing.getDate().toString() : null);
         audit.setOldAmount(existing.getAmount() != null ? existing.getAmount().toString() : null);
         audit.setOldType(existing.getType());
-
         audit.setNewDate(updatedPayment.getDate() != null ? updatedPayment.getDate().toString() : null);
         audit.setNewAmount(updatedPayment.getAmount() != null ? updatedPayment.getAmount().toString() : null);
         audit.setNewType(updatedPayment.getType());
-
         auditRepo.save(audit);
-
         existing.setAmount(updatedPayment.getAmount());
         existing.setType(updatedPayment.getType());
         existing.setDate(updatedPayment.getDate());
-
         WeeklyPaymentsReceived saved = repo.save(existing);
-
         // ✅ Only update Carry Forward if status is true
         if (saved.isStatus()) {
             updateCarryForwardBalance(saved.getWeeklyNumber());
         }
-
         return saved;
     }
     public Integer getLastClosedWeek() {
@@ -162,29 +133,21 @@ public class WeeklyPaymentsReceivedService {
         updateCarryForwardBalance(weeklyPaymentsReceived.getWeeklyNumber());
         return saved;
     }
-
     public void deleteWeeklyPaymentsReceived(Long id) {
         WeeklyPaymentsReceived payment = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment Received Not Found " + id));
-
         Integer weekNumber = payment.getWeeklyNumber();
-
         // delete it
         repo.deleteById(id);
-
         // only if status is true → update balance
         if (Boolean.TRUE.equals(payment.isStatus())) {
             updateCarryForwardBalance(weekNumber);
         }
     }
-
-
     private void updateCarryForwardBalance(Integer weekNumber) {
         Double totalExpenses = expenseRepo.getTotalExpenseByWeek(weekNumber);
         Double totalPayments = repo.getTotalPaymentsByWeek(weekNumber);
-
         double balance = (totalPayments != null ? totalPayments : 0) - (totalExpenses != null ? totalExpenses : 0);
-
         WeeklyPaymentsReceived carryForwardRow = repo.findCarryForwardRow(weekNumber + 1);
         if (carryForwardRow != null) {
             Double discount = carryForwardRow.getDiscountAmount();
@@ -195,7 +158,6 @@ public class WeeklyPaymentsReceivedService {
             repo.save(carryForwardRow);
         }
     }
-
     public void recalculateWeeklyRefundPayment(Integer weeklyNumber, LocalDate date) {
         // ✅ Sum of amount + extra_amount from daily entries
         Double totalDailyExpenses = refundReceivedRepository.sumAmountByWeekAndDate(weeklyNumber, date);
@@ -224,13 +186,11 @@ public class WeeklyPaymentsReceivedService {
             repo.save(newExpense);
         }
     }
-
     public void recalculateWeeklyAdvanceRefundPayment(int weekNumber) {
         String today = LocalDate.now().toString(); // yyyy-MM-dd format
         Double totalRefunds = advancePortalRepository.sumRefundsByWeekDateAndMode(
                 weekNumber, today, "Refund", "Cash"
         );
-
         if (totalRefunds != null && totalRefunds > 0) {
             WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
                     LocalDate.now(), weekNumber, "Project Advance Refund"
@@ -251,13 +211,11 @@ public class WeeklyPaymentsReceivedService {
             }
         }
     }
-
     public void recalculateWeeklyStaffAdvanceRefundPayment(int weekNumber) {
         String today = LocalDate.now().toString(); // yyyy-MM-dd format
         Double totalRefunds = staffAdvancePortalRepository.sumRefundsByWeekDateAndMode(
                 weekNumber, today, "Refund", "Cash"
         );
-
         if (totalRefunds != null && totalRefunds > 0) {
             WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
                     LocalDate.now(), weekNumber, "Staff Advance Refund"
@@ -284,7 +242,6 @@ public class WeeklyPaymentsReceivedService {
         Double totalRefunds = loanPortalRepository.sumRefundsByWeekDateAndMode(
                 weekNumber, today, "Refund", "Cash"
         );
-
         if (totalRefunds != null && totalRefunds > 0) {
             WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
                     LocalDate.now(), weekNumber, "Loan Refund"

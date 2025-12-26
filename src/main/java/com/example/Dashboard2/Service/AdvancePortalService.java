@@ -70,6 +70,7 @@ public class AdvancePortalService {
             audit.setOldDate(existing.getDate());
             audit.setOldVendorId(String.valueOf(existing.getVendorId()));
             audit.setOldContractorId(String.valueOf(existing.getContractorId()));
+            audit.setOldEmployeeId(String.valueOf(existing.getEmployeeId()));
             audit.setOldProjectId(String.valueOf(existing.getProjectId()));
             audit.setOldTransferSiteId(String.valueOf(existing.getTransferSiteId()));
             audit.setOldPaymentMode(existing.getPaymentMode());
@@ -83,6 +84,7 @@ public class AdvancePortalService {
             audit.setNewDate(updatedPortal.getDate() != null ? updatedPortal.getDate() : existing.getDate());
             audit.setNewVendorId(String.valueOf(updatedPortal.getVendorId()));
             audit.setNewContractorId(String.valueOf(updatedPortal.getContractorId()));
+            audit.setNewEmployeeId(String.valueOf(updatedPortal.getEmployeeId()));
             audit.setNewProjectId(String.valueOf(updatedPortal.getProjectId()));
             audit.setNewTransferSiteId(String.valueOf(updatedPortal.getTransferSiteId()));
             audit.setNewPaymentMode(updatedPortal.getPaymentMode() != null ? updatedPortal.getPaymentMode() : existing.getPaymentMode());
@@ -98,6 +100,7 @@ public class AdvancePortalService {
             existing.setDate(updatedPortal.getDate());
             existing.setVendorId(updatedPortal.getVendorId());
             existing.setContractorId(updatedPortal.getContractorId());
+            existing.setEmployeeId(updatedPortal.getEmployeeId());
             existing.setProjectId(updatedPortal.getProjectId());
             existing.setTransferSiteId(updatedPortal.getTransferSiteId());
             existing.setPaymentMode(updatedPortal.getPaymentMode());
@@ -176,6 +179,7 @@ public class AdvancePortalService {
                     portal.setDate(dataMap.get("date"));
                     portal.setVendorId(parseIntSafe(dataMap.get("vendor_id")));
                     portal.setContractorId(parseIntSafe(dataMap.get("contractor_id")));
+                    portal.setEmployeeId(parseIntSafe(dataMap.get("employee_id")));
                     portal.setProjectId(parseIntSafe(dataMap.get("project_id")));
                     portal.setTransferSiteId(parseIntSafe(dataMap.get("transfer_site_id")));
                     portal.setPaymentMode(dataMap.get("payment_mode"));
@@ -235,4 +239,14 @@ public class AdvancePortalService {
         }
         return null;
     }
+
+    public AdvancePortal updateAllowToEdit(Long id, boolean allowToEdit) {
+        return advancePortalRepository.findById(id)
+                .map(portal -> {
+                    portal.setAllowToEdit(allowToEdit);
+                    return advancePortalRepository.save(portal);
+                })
+                .orElseThrow(() -> new RuntimeException("Advance Portal not found"));
+    }
+
 }

@@ -2,10 +2,12 @@ package com.example.Dashboard2.Service;
 
 import com.example.Dashboard2.Entity.LoanPortal;
 import com.example.Dashboard2.Entity.LoanPortalAudit;
+import com.example.Dashboard2.Entity.StaffAdvancePortal;
 import com.example.Dashboard2.Repository.LoanPortalRepository;
 import com.example.Dashboard2.Repository.LoanPortalAuditRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,20 +22,19 @@ import java.util.Optional;
 public class LoanPortalService {
     private final LoanPortalRepository repository;
     private final LoanPortalAuditRepository auditRepository;
-
     @Autowired
     private WeeklyPaymentsReceivedService paymentsReceivedService;
-
+    @Autowired
+    @Lazy
+    private StaffAdvancePortalService staffAdvancePortalService;
     public LoanPortalService(LoanPortalRepository repository, LoanPortalAuditRepository auditRepository) {
         this.repository = repository;
         this.auditRepository = auditRepository;
     }
-
     public Long getNextEntry() {
         Long maxEntry = repository.findMaxEntry();
         return maxEntry == null ? 1L : maxEntry + 1;
     }
-
     private void initializeDefaultsIfMissing(LoanPortal loanPortal) {
         if (loanPortal.getEntryNo() == null) {
             loanPortal.setEntryNo(getNextEntry());
@@ -51,11 +52,95 @@ public class LoanPortalService {
             loanPortal.setWeekNo(weekNo);
         }
     }
-
+    private StaffAdvancePortal createStaffAdvancePortalFromLoanPortal(LoanPortal loanPortal, int weekNo) {
+        StaffAdvancePortal staffAdvance = new StaffAdvancePortal();
+        staffAdvance.setType("Transfer");
+        staffAdvance.setDate(loanPortal.getDate());
+        staffAdvance.setWeekNo(weekNo);
+        // Entry number will be set by StaffAdvancePortalService using its own sequence
+        staffAdvance.setEntryNo(null);
+        staffAdvance.setEmployeeId(loanPortal.getEmployeeId() != null ? loanPortal.getEmployeeId() : 0);
+        staffAdvance.setLabourId(loanPortal.getLabourId() != null ? loanPortal.getLabourId() : 0);
+        // When transferring FROM LoanPortal TO StaffAdvancePortal:
+        boolean hasEmployeeId = loanPortal.getEmployeeId() != null && loanPortal.getEmployeeId() > 0;
+        boolean hasLabourId = loanPortal.getLabourId() != null && loanPortal.getLabourId() > 0;
+        if (hasEmployeeId) {
+            staffAdvance.setFromPurposeId(4);
+            staffAdvance.setToPurposeId(6);
+        } else if (hasLabourId) {
+            staffAdvance.setFromPurposeId(5);
+            staffAdvance.setToPurposeId(6);
+        } else {
+            // Default fallback
+            staffAdvance.setFromPurposeId(null);
+            staffAdvance.setToPurposeId(null);
+        }
+        staffAdvance.setAmount(Math.abs(loanPortal.getAmount()));
+        staffAdvance.setStaffPaymentMode(loanPortal.getLoanPaymentMode());
+        staffAdvance.setStaffRefundAmount(0);
+        // Description should mention "Transfer from Loan Portal"
+        String description = loanPortal.getDescription();
+        if (description != null && !description.trim().isEmpty()) {
+            staffAdvance.setDescription("Transfer from Loan Portal - " + description);
+        } else {
+            staffAdvance.setDescription("Transfer from Loan Portal");
+        }
+        staffAdvance.setFileUrl(loanPortal.getFileUrl());
+        staffAdvance.setLoanPortalId(null);
+        return staffAdvance;
+    }
     @Transactional
     public LoanPortal save(LoanPortal loanPortal) {
         initializeDefaultsIfMissing(loanPortal);
+        
+        // Check if this is coming from StaffAdvancePortal - if so, save as-is (positive amount)
+        boolean isFromStaffAdvance = loanPortal.getDescription() != null && 
+                                     loanPortal.getDescription().contains("Transfer from Staff Advance");
+        
+        if (isFromStaffAdvance) {
+            // Save positive amount entry directly (coming from StaffAdvancePortal)
+            LoanPortal saved = repository.save(loanPortal);
+            paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo());
+            return saved;
+        }
+        
+        // Check if Transfer type with employee_id or labour_id - save positive amount to StaffAdvancePortal
         if ("Transfer".equalsIgnoreCase(loanPortal.getType())) {
+            boolean hasEmployeeId = loanPortal.getEmployeeId() != null && loanPortal.getEmployeeId() > 0;
+            boolean hasLabourId = loanPortal.getLabourId() != null && loanPortal.getLabourId() > 0;
+            if (hasEmployeeId || hasLabourId) {
+                // Save negative amount entry in LoanPortal
+                LoanPortal loanEntry = new LoanPortal();
+                loanEntry.setEntryNo(loanPortal.getEntryNo());
+                loanEntry.setDate(loanPortal.getDate());
+                loanEntry.setWeekNo(loanPortal.getWeekNo());
+                loanEntry.setVendorId(loanPortal.getVendorId());
+                loanEntry.setContractorId(loanPortal.getContractorId());
+                loanEntry.setEmployeeId(loanPortal.getEmployeeId());
+                loanEntry.setLabourId(loanPortal.getLabourId());
+                loanEntry.setType(loanPortal.getType());
+                loanEntry.setFromPurposeId(loanPortal.getFromPurposeId());
+                loanEntry.setToPurposeId(loanPortal.getToPurposeId());
+                loanEntry.setAmount(-Math.abs(loanPortal.getAmount()));
+                loanEntry.setLoanPaymentMode(loanPortal.getLoanPaymentMode());
+                loanEntry.setLoanRefundAmount(0.0);
+                loanEntry.setDescription(loanPortal.getDescription());
+                loanEntry.setFileUrl(loanPortal.getFileUrl());
+                loanEntry.setProjectId(loanPortal.getProjectId() != null ? loanPortal.getProjectId() : 0);
+                loanEntry.setTransferProjectId(loanPortal.getTransferProjectId() != null ? loanPortal.getTransferProjectId() : 0);
+                loanEntry.setAdvancePortalId(loanPortal.getAdvancePortalId());
+
+                LoanPortal saved = repository.save(loanEntry);
+                // Create and save positive amount entry in StaffAdvancePortal
+                StaffAdvancePortal staffAdvanceEntry = createStaffAdvancePortalFromLoanPortal(loanPortal, saved.getWeekNo());
+                StaffAdvancePortal savedStaffAdvance = staffAdvancePortalService.save(staffAdvanceEntry);
+                // Link StaffAdvancePortal ID back to LoanPortal
+                saved.setStaffPortalId(savedStaffAdvance.getStaffAdvancePortalId());
+                repository.save(saved);
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo());
+                return saved;
+            }
+            // Existing Transfer logic for Purpose to Purpose and Purpose to Site
             if (loanPortal.getFromPurposeId() != null && loanPortal.getFromPurposeId() > 0 &&
                     loanPortal.getToPurposeId() != null && loanPortal.getToPurposeId() > 0) {
                 LoanPortal fromEntry = createTransferEntry(loanPortal, true, "Purpose to Purpose");
@@ -74,7 +159,6 @@ public class LoanPortalService {
         paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo());
         return saved;
     }
-
     private LoanPortal createTransferEntry(LoanPortal source, boolean isFrom, String type) {
         LoanPortal entry = new LoanPortal();
         entry.setEntryNo(source.getEntryNo());
@@ -87,6 +171,7 @@ public class LoanPortalService {
         entry.setLoanPaymentMode(source.getLoanPaymentMode());
         entry.setDescription(source.getDescription());
         entry.setLoanRefundAmount(0.0);
+        entry.setAdvancePortalId(source.getAdvancePortalId());
         if ("Purpose to Purpose".equals(type)) {
             entry.setFromPurposeId(isFrom ? source.getFromPurposeId() : source.getToPurposeId());
             entry.setToPurposeId(isFrom ? source.getToPurposeId() : source.getFromPurposeId());
@@ -100,7 +185,6 @@ public class LoanPortalService {
         }
         return entry;
     }
-
     @Transactional
     public List<LoanPortal> updateLoan(Long id, LoanPortal updatedLoan, String editedBy) {
         Optional<LoanPortal> optionalLoan = repository.findById(id);
@@ -108,7 +192,6 @@ public class LoanPortalService {
             throw new EntityNotFoundException("Loan portal not found with id: " + id);
         }
         LoanPortal existingLoan = optionalLoan.get();
-
         // --- Create audit record ---
         LoanPortalAudit audit = new LoanPortalAudit();
         audit.setLoanPortalId(existingLoan.getLoanPortalId());
@@ -169,7 +252,6 @@ public class LoanPortalService {
                 existingLoan.setToPurposeId(0L);
                 existingLoan.setTransferProjectId(updatedLoan.getTransferProjectId());
                 existingLoan.setProjectId(0);
-
                 initializeDefaultsIfMissing(existingLoan);
                 repository.save(existingLoan);
                 // ✅ Trigger recalculation
@@ -272,15 +354,12 @@ public class LoanPortalService {
         paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo());
         return List.of(existingLoan);
     }
-
     public List<LoanPortal> getAll() {
         return repository.findAll();
     }
-
     public Optional<LoanPortal> getById(Long id) {
         return repository.findById(id);
     }
-
     @Transactional
     public void deleteById(Long id) {
         LoanPortal existing = repository.findById(id)
@@ -290,13 +369,19 @@ public class LoanPortalService {
         // ✅ Trigger recalculation
         paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(weekNumber);
     }
-
     public List<LoanPortal> findByEntryNo(Long entryNo) {
         return repository.findByEntryNo(entryNo);
     }
-
     public List<LoanPortalAudit> getAuditHistory(Long loanPortalId) {
         return auditRepository.findByLoanPortalId(loanPortalId);
     }
 
+    public LoanPortal updateAllowToEdit(Long id, boolean allowToEdit){
+        return repository.findById(id)
+                .map(portal -> {
+                    portal.setAllowToEdit(allowToEdit);
+                    return repository.save(portal);
+                })
+                .orElseThrow(() -> new RuntimeException("Loan Portal not found"));
+    }
 }

@@ -20,4 +20,7 @@ public interface WeeklyPaymentsDailyEntryRepository extends JpaRepository<Weekly
             "WHERE e.weeklyNumber = :weeklyNumber AND e.date = :date")
     Double sumAmountAndExtraByWeekAndDate(@Param("weeklyNumber") Integer weeklyNumber,
                                           @Param("date") LocalDate date);
+
+    // ✅ NEW: Get only records where send_to_expenses_entry = false
+    List<WeeklyPaymentsDailyEntry> findBySendToExpensesEntryFalse();
 }

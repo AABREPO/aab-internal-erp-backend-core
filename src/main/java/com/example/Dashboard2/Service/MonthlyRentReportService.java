@@ -83,9 +83,19 @@ public class MonthlyRentReportService {
                 res.setMessage("Flask upload failed: " + response.body());
             }
 
+        } catch (java.net.ConnectException | java.net.UnknownHostException e) {
+            res.setStatus(500);
+            res.setMessage("Cannot connect to Flask upload service at " + FLASK_UPLOAD_URL + 
+                          ". Please ensure the Flask service is running on localhost:5000. Error: " + 
+                          (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            e.printStackTrace();
         } catch (Exception e) {
             res.setStatus(500);
-            res.setMessage("Exception: " + e.getMessage());
+            String errorMsg = e.getMessage();
+            if (errorMsg == null || errorMsg.isEmpty()) {
+                errorMsg = e.getClass().getSimpleName() + " occurred during PDF upload";
+            }
+            res.setMessage("Exception: " + errorMsg);
             e.printStackTrace();
         }
 

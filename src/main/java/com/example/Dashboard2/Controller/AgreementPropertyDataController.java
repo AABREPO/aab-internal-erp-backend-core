@@ -41,7 +41,6 @@ public class AgreementPropertyDataController {
         return service.updateAgreement(id, agreement);
     }
 
-
     @PutMapping("/updateConfirmedUrl/{id}")
     public AgreementPropertyDataWithFileNames updateConfirmedAgreementUrl(
             @PathVariable Long id,

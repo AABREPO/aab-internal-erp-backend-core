@@ -60,7 +60,6 @@ public class VendorPaymentsTrackerController {
             @RequestParam boolean paid) {
         return service.updateBillPaid(billId, paid);
     }
-
     // Update send_request field
     @PutMapping("/tracker/{trackerId}/send-request")
     public VendorPaymentsTracker updateSendRequest(
@@ -68,7 +67,6 @@ public class VendorPaymentsTrackerController {
             @RequestParam boolean sendRequest) {
         return service.updateSendRequest(trackerId, sendRequest);
     }
-
     // Update request_approved field
     @PutMapping("/tracker/{trackerId}/approve-request")
     public VendorPaymentsTracker updateRequestApproved(
@@ -80,7 +78,6 @@ public class VendorPaymentsTrackerController {
     public VendorPaymentsTracker updateAdjustmentAmount( @PathVariable Long trackerId, @RequestParam double adjustmentAmount ){
         return service.updatedAdjustmentAmount(trackerId, adjustmentAmount);
     }
-
     @PutMapping("/tracker/{trackerId}/update-details")
     public VendorPaymentsTracker updateTrackerDetails(
             @PathVariable Long trackerId,
@@ -95,7 +92,6 @@ public class VendorPaymentsTrackerController {
                 service.updateOverAllPaymentPdfUrl(billId, pdfUrl);
         return ResponseEntity.ok(updatedBill);
     }
-
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteById(@PathVariable Long id) {
         String message = service.deleteById(id);
@@ -106,11 +102,9 @@ public class VendorPaymentsTrackerController {
     public List<java.util.Map<String, Object>> getFullyPaidTrackerData() {
         return service.getFullyPaidTrackerData();
     }
-
     // Get all fully paid AND verified trackers with all related data
     @GetMapping("/trackers/fully-paid-verified/all-data")
     public List<java.util.Map<String, Object>> getFullyPaidAndVerifiedTrackerData() {
         return service.getFullyPaidAndVerifiedTrackerData();
     }
-
 }

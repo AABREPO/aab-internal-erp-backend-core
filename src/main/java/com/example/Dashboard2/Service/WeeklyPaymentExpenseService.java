@@ -77,10 +77,10 @@ public class WeeklyPaymentExpenseService {
     public WeeklyPaymentExpense editExpense(Long id,String username, WeeklyPaymentExpense updatedExpense) {
         WeeklyPaymentExpense existing = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Expense not found"));
-        // 🔹 Save Audit Before Updating
+
         WeeklyPaymentExpenseAudit audit = new WeeklyPaymentExpenseAudit();
         audit.setWeeklyPaymentExpenseId(existing.getId());
-        audit.setEditedBy(username); // replace with logged-in username if available
+        audit.setEditedBy(username);
         audit.setEditedDate(LocalDateTime.now());
         audit.setWeeklyNumber(existing.getWeeklyNumber() != null ? existing.getWeeklyNumber().toString() : null);
         audit.setOldDate(existing.getDate() != null ? existing.getDate().toString() : null);
@@ -109,7 +109,14 @@ public class WeeklyPaymentExpenseService {
         existing.setLoanPortalId(updatedExpense.getLoanPortalId());
         existing.setRentManagementId(updatedExpense.getRentManagementId());
         existing.setExpensesEntryId(updatedExpense.getExpensesEntryId());
-        return repo.save(existing);
+        WeeklyPaymentExpense saved = repo.save(existing);
+
+        // 🔥 CALL HERE
+        if (saved.isStatus()) {
+            updateCarryForwardBalance(saved.getWeeklyNumber());
+        }
+
+        return saved;
     }
 
     public WeeklyPaymentExpense updateExpense(Long id, String username ,WeeklyPaymentExpense updatedExpense) {
@@ -119,7 +126,6 @@ public class WeeklyPaymentExpenseService {
         if (!existing.getWeeklyNumber().equals(lastClosedWeek)) {
             throw new IllegalStateException("Only the last closed week's expenses can be edited.");
         }
-        // 🔹 Save Audit Before Updating
         WeeklyPaymentExpenseAudit audit = new WeeklyPaymentExpenseAudit();
         audit.setWeeklyPaymentExpenseId(existing.getId());
         audit.setEditedBy(username);
@@ -138,7 +144,7 @@ public class WeeklyPaymentExpenseService {
         audit.setNewVendorId(updatedExpense.getVendorId() != null ? updatedExpense.getVendorId().toString() : null);
         audit.setNewProjectId(updatedExpense.getProjectId() != null ? updatedExpense.getProjectId().toString() : null);
         auditRepo.save(audit);
-        // 🔹 Apply Update
+
         existing.setAmount(updatedExpense.getAmount());
         existing.setType(updatedExpense.getType());
         existing.setDate(updatedExpense.getDate());
@@ -157,23 +163,26 @@ public class WeeklyPaymentExpenseService {
         }
         return saved;
     }
-    // WeeklyPaymentExpenseService.java
+
     public WeeklyPaymentExpense saveExpenseForSameWeeklyNumber(WeeklyPaymentExpense weeklyPaymentExpense){
         WeeklyPaymentExpense saved = repo.save(weeklyPaymentExpense);
         updateCarryForwardBalance(weeklyPaymentExpense.getWeeklyNumber());
         return saved;
     }
-    // WeeklyPaymentExpenseService.java
+
     public void deleteWeeklyPaymentExpense(Long id) {
         WeeklyPaymentExpense expense = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Not Found " + id));
         Integer weekNumber = expense.getWeeklyNumber();
-        // delete it
         repo.deleteById(id);
-        // only if status is true → update balance
-        if (Boolean.TRUE.equals(expense.isStatus())) {
-            updateCarryForwardBalance(weekNumber);
-        }
+        // Always run this
+        updateCarryForwardBalance(weekNumber);
+    }
+
+    public void deleteWeeklyPaymentExpenseWithoutCarryForward(Long id){
+        WeeklyPaymentExpense expense = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not Found" + id));
+        repo.deleteById(id);
     }
     private void updateCarryForwardBalance(Integer weekNumber) {
         Double totalExpenses = repo.getTotalExpenseByWeek(weekNumber);
