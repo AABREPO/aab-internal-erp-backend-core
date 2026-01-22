@@ -3,9 +3,14 @@ package com.example.Dashboard2.Entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@Setter
 public class VendorPaymentsTrackerBillVerification {
 
     @Id
@@ -25,12 +30,13 @@ public class VendorPaymentsTrackerBillVerification {
     @JsonProperty("is_paid")
     private Boolean isPaid = false;
 
+    @JsonProperty("is_duplicate")
+    private Boolean isDuplicate = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendor_payments_tracker_id", nullable = false)
     @JsonBackReference
     private VendorPaymentsTracker vendorPaymentsTracker;
-
-
 
     // Automatically set timestamp only when record is created
     @PrePersist
@@ -38,65 +44,6 @@ public class VendorPaymentsTrackerBillVerification {
         if (timestamp == null) {
             timestamp = LocalDateTime.now();
         }
-    }
-
-    // Getters and setters
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public String getBillNumber() {
-        return billNumber;
-    }
-    public void setBillNumber(String billNumber) {
-        this.billNumber = billNumber;
-    }
-
-    public Boolean getIsVerified() {
-        return isVerified;
-    }
-    public void setIsVerified(Boolean isVerified) {
-        this.isVerified = isVerified;
-    }
-
-    public Boolean getIsPaid() {
-        return isPaid;
-    }
-    public void setIsPaid(Boolean isPaid) {
-        this.isPaid = isPaid;
-    }
-
-    public VendorPaymentsTracker getVendorPaymentsTracker() {
-        return vendorPaymentsTracker;
-    }
-    public void setVendorPaymentsTracker(VendorPaymentsTracker vendorPaymentsTracker) {
-        this.vendorPaymentsTracker = vendorPaymentsTracker;
-    }
-
-    public Boolean getVerified() {
-        return isVerified;
-    }
-
-    public void setVerified(Boolean verified) {
-        isVerified = verified;
-    }
-
-    public Boolean getPaid() {
-        return isPaid;
-    }
-
-    public void setPaid(Boolean paid) {
-        isPaid = paid;
     }
 
 }

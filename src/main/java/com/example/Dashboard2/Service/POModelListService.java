@@ -34,6 +34,10 @@ public class POModelListService {
     public List<POModelList> getAllPOModelList(){
         return poModelListRepository.findAll();
     }
+    public POModelList getPOModalById(Long id){
+        return poModelListRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("PO Modal With ID" + id + "Not Found"));
+    }
 
     public POModelList updatePOModelList(Long id, POModelList poModelList){
         Optional<POModelList> existingPoModelList = poModelListRepository.findById(id);

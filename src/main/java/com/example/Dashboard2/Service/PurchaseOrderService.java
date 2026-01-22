@@ -13,6 +13,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,7 +38,7 @@ public class PurchaseOrderService {
     // Get last 250 data from this purchase orders
     public List<PurchaseOrder> getLast250PurchaseOrders() {
         return purchaseOrderRepository.findLatestPurchaseOrders(
-                PageRequest.of(0, 250)
+                PageRequest.of(0, 150)
         );
     }
     public PurchaseOrder editPurchaseOrders(Long id, PurchaseOrder updatedOrder) {
@@ -61,6 +62,12 @@ public class PurchaseOrderService {
             throw new RuntimeException("Purchase Order with ID " + id + " not found.");
         }
     }
+    public PurchaseOrder getPOById(Long id) {
+        return purchaseOrderRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Purchase Order with ID " + id + " not found"));
+    }
+
     // Delete all purchase orders
     public String deleteAllPurchaseOrders() {
         purchaseOrderRepository.deleteAll();

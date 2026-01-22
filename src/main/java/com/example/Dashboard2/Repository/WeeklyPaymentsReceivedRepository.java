@@ -17,8 +17,15 @@ public interface WeeklyPaymentsReceivedRepository extends JpaRepository<WeeklyPa
 
     @Query("SELECT MAX(p.weeklyNumber) FROM WeeklyPaymentsReceived p")
     Integer findMaxWeeklyNumber();
-    @Query("SELECT DISTINCT w.weeklyNumber FROM WeeklyPaymentsReceived w WHERE w.status = true ORDER BY w.weeklyNumber ASC")
+    @Query("""
+SELECT w.weeklyNumber
+FROM WeeklyPaymentsReceived w
+WHERE w.status = true
+GROUP BY w.weeklyNumber
+ORDER BY MAX(w.id) ASC
+""")
     List<Integer> findAllActiveWeekNumbers();
+
     @Query("SELECT MAX(w.weeklyNumber) FROM WeeklyPaymentsReceived w WHERE w.status = true")
     Integer findLastClosedWeekNumber();
 

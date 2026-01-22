@@ -37,9 +37,10 @@ public class SecurityConfig {
                                 ,"/api/bill-entry/**","/api/vendor-bill-tracker/**","/api/invoices/**","/api/eb-service-no/**","/api/support_staff/**"
                                 ,"/api/utility-telecom-purpose/**","/api/utility-telecom-service-provider/**","/api/utility-telecom-service-type/**"
                                 ,"/api/subscription-service-type/**","/api/subscription-service-provider/**","/api/subscription-purpose/**"
-                                ,"/api/amc-service-type/**","/api/amc-service-provider/**","/api/amc-purpose/**","/api/utility-telecom/**"
-                                ,"/api/utility-subscription/**","/api/utility-frequency/**","/api/tenant_link_shop/**","/api/edit_requests/**"
-                                ,"/api/data_correction/**","/api/data_correction/monitoring/{tableName}/{dataId}","/api/vendor_carry_forward/**").permitAll()
+                                ,"/api/amc-service-type/**","/api/amc-service-provider/**","/api/amc-purpose/**","/api/utility-telecom/**","/api/incoming_pdfs/**"
+                                ,"/api/utility-subscription/**","/api/utility-frequency/**","/api/tenant_link_shop/**","/api/edit_requests/**","/api/inventory/**"
+                                ,"/api/data_correction/**","/api/data_correction/monitoring/{tableName}/{dataId}","/api/vendor_carry_forward/**"
+                        ,"/api/closed_po_records/**").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();
@@ -48,7 +49,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000","http://localhost:5173", "https://dashboard.aabuilders.in","https://po.aabuilders.in")); // ✅ specific origins
+        config.setAllowedOrigins(List.of("http://localhost:3000","http://localhost:5173", "https://dashboard.aabuilders.in","https://po.aabuilders.in","https://orbit.aabuilders.in")); // ✅ specific origins
         config.setAllowCredentials(true);
         config.setAllowedHeaders(List.of("*"));
         config.addAllowedHeader("*");

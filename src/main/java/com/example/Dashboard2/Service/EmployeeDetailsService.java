@@ -27,6 +27,17 @@ public class EmployeeDetailsService {
         return employeeDetailsRepository.findAll();
     }
 
+    // Get all Site Engineers
+    public List<EmployeeDetails> getAllSiteEngineers() {
+        return employeeDetailsRepository.findByRoleOfEmployee("Site Engineer");
+    }
+
+    // Get employee by ID
+    public EmployeeDetails getEmployeeById(Long id) {
+        return employeeDetailsRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found with id " + id));
+    }
+
     // Delete a single employee by ID
     public void deleteEmployee(Long id) {
         employeeDetailsRepository.deleteById(id);

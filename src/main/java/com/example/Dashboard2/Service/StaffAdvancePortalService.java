@@ -99,7 +99,7 @@ public class StaffAdvancePortalService {
                 // Keep the fromPurposeId and toPurposeId that were set (6 and 4/5 based on employee_id/labour_id)
                 saved = repository.save(staffAdvance);
                 // ✅ trigger recalculation after save
-                paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo());
+                paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
                 return saved;
             }
             
@@ -176,7 +176,7 @@ public class StaffAdvancePortalService {
         }
 
         // ✅ trigger recalculation after save
-        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo());
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
 
         return saved;
     }
@@ -359,7 +359,7 @@ public class StaffAdvancePortalService {
         }
 
         // ✅ trigger recalculation once, for whichever branch was executed
-        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(updatedWeekNo);
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(updatedWeekNo, updatedAdvance.getDate());
 
         return resultEntries;
     }
@@ -402,7 +402,7 @@ public class StaffAdvancePortalService {
         int weekNumber = existing.getWeekNo();
         repository.deleteById(id);
         // ✅ trigger recalculation after delete
-        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(weekNumber);
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(weekNumber, existing.getDate());
     }
 
     public List<StaffAdvancePortalAudit> getAuditHistory(Long staffAdvancePortalId) {

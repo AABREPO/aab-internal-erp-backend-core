@@ -100,7 +100,7 @@ public class LoanPortalService {
         if (isFromStaffAdvance) {
             // Save positive amount entry directly (coming from StaffAdvancePortal)
             LoanPortal saved = repository.save(loanPortal);
-            paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo());
+            paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(),saved.getDate());
             return saved;
         }
         
@@ -137,7 +137,7 @@ public class LoanPortalService {
                 // Link StaffAdvancePortal ID back to LoanPortal
                 saved.setStaffPortalId(savedStaffAdvance.getStaffAdvancePortalId());
                 repository.save(saved);
-                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo());
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
                 return saved;
             }
             // Existing Transfer logic for Purpose to Purpose and Purpose to Site
@@ -156,7 +156,7 @@ public class LoanPortalService {
             }
         }
         LoanPortal saved = repository.save(loanPortal);
-        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo());
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
         return saved;
     }
     private LoanPortal createTransferEntry(LoanPortal source, boolean isFrom, String type) {
@@ -255,7 +255,7 @@ public class LoanPortalService {
                 initializeDefaultsIfMissing(existingLoan);
                 repository.save(existingLoan);
                 // ✅ Trigger recalculation
-                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo());
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate());
                 return List.of(existingLoan);
             }
             // Case 2: Purpose -> Purpose
@@ -299,7 +299,7 @@ public class LoanPortalService {
                 fromEntry = repository.save(fromEntry);
                 toEntry = repository.save(toEntry);
                 // ✅ Trigger recalculation
-                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(fromEntry.getWeekNo());
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(fromEntry.getWeekNo(), fromEntry.getDate());
                 return List.of(fromEntry, toEntry);
             }
             // Case 3: Purpose -> Site
@@ -319,7 +319,7 @@ public class LoanPortalService {
                 initializeDefaultsIfMissing(existingLoan);
                 repository.save(existingLoan);
                 // ✅ Trigger recalculation
-                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo());
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate());
                 return List.of(existingLoan);
             }
         }
@@ -351,7 +351,7 @@ public class LoanPortalService {
         existingLoan.setFileUrl(updatedLoan.getFileUrl());
         repository.save(existingLoan);
         // ✅ Trigger recalculation
-        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo());
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate());
         return List.of(existingLoan);
     }
     public List<LoanPortal> getAll() {
@@ -367,7 +367,7 @@ public class LoanPortalService {
         int weekNumber = existing.getWeekNo();
         repository.deleteById(id);
         // ✅ Trigger recalculation
-        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(weekNumber);
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(weekNumber, existing.getDate());
     }
     public List<LoanPortal> findByEntryNo(Long entryNo) {
         return repository.findByEntryNo(entryNo);
@@ -375,7 +375,6 @@ public class LoanPortalService {
     public List<LoanPortalAudit> getAuditHistory(Long loanPortalId) {
         return auditRepository.findByLoanPortalId(loanPortalId);
     }
-
     public LoanPortal updateAllowToEdit(Long id, boolean allowToEdit){
         return repository.findById(id)
                 .map(portal -> {

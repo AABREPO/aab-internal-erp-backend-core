@@ -49,6 +49,10 @@ public class PurchaseOrderController {
         PurchaseOrder updated = purchaseOrderService.toggleDeletedStatus(id, deleteStatus);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
+    @GetMapping("/get/{id}")
+    public ResponseEntity<PurchaseOrder> getPurchaseOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderService.getPOById(id));
+    }
     // get the vendorName count
     @GetMapping("/countByVendor")
     public Long getCountByVendor(@RequestParam int vendorId) {

@@ -56,7 +56,7 @@ public class AdvancePortalService {
             throw new IllegalArgumentException("Invalid date format. Expected yyyy-MM-dd");
         }
         AdvancePortal saved = advancePortalRepository.save(advancePortal);
-        paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(saved.getWeekNo());
+        paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
         return saved;
     }
     public AdvancePortal updateAdvancePortal(Long id, AdvancePortal updatedPortal, String editedBy) {
@@ -110,7 +110,7 @@ public class AdvancePortalService {
             existing.setDescription(updatedPortal.getDescription());
             existing.setFileUrl(updatedPortal.getFileUrl());
             AdvancePortal saved = advancePortalRepository.save(existing);
-            paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(saved.getWeekNo());
+            paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
             return saved;
         }).orElse(null);
     }
@@ -118,7 +118,7 @@ public class AdvancePortalService {
         AdvancePortal existing = advancePortalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Advance Portal not found"));
         advancePortalRepository.deleteById(id);
-        paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(existing.getWeekNo());
+        paymentsReceivedService.recalculateWeeklyAdvanceRefundPayment(existing.getWeekNo(), existing.getDate());
     }
     public List<AdvancePortalAudit> getAuditHistory(int advancePortalId) {
         return auditRepository.findByAdvancePortalId(advancePortalId);

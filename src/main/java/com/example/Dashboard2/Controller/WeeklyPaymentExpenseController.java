@@ -19,6 +19,10 @@ public class WeeklyPaymentExpenseController {
     public List<WeeklyPaymentExpense> getByWeek(@PathVariable Integer weekNumber) {
         return service.getExpensesByWeek(weekNumber);
     }
+    @GetMapping("/getAll")
+    public List<WeeklyPaymentExpense> getAllExpenses(){
+        return service.getAllWeeklyExpenses();
+    }
     @PostMapping("/save-daily")
     public WeeklyPaymentExpense saveDailyExpense(@RequestBody WeeklyPaymentExpense expense) {
         return service.saveOrUpdateDailyExpense(expense);

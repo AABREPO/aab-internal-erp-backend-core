@@ -79,6 +79,13 @@ public class VendorPaymentsTrackerService {
         bill.setIsPaid(paid);
         return billRepository.save(bill);
     }
+    // Update a bill if that is duplicate
+    public VendorPaymentsTrackerBillVerification updateDuplicateBill(Long billId, Boolean duplicate){
+        VendorPaymentsTrackerBillVerification bill = billRepository.findById(billId)
+                .orElseThrow(() -> new RuntimeException("Bill not found with id: " + billId));
+        bill.setIsDuplicate(duplicate);
+        return billRepository.save(bill);
+    }
     // Update send_request flag
     public VendorPaymentsTracker updateSendRequest(Long trackerId, boolean sendRequest) {
         VendorPaymentsTracker tracker = trackerRepository.findById(trackerId)
@@ -107,6 +114,7 @@ public class VendorPaymentsTrackerService {
         tracker.setBillArrivalDate(updatedTracker.getBillArrivalDate());
         tracker.setVendorId(updatedTracker.getVendorId());
         tracker.setNoOfBills(updatedTracker.getNoOfBills());
+        tracker.setExtraBills(updatedTracker.getExtraBills());
         tracker.setTotalAmount(updatedTracker.getTotalAmount());
         return trackerRepository.save(tracker);
     }
@@ -216,4 +224,11 @@ public class VendorPaymentsTrackerService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    // Delete a bill verification record
+    public void deleteBillVerification(Long billId) {
+        if (!billRepository.existsById(billId)) {
+            throw new RuntimeException("Bill verification not found with id: " + billId);
+        }
+        billRepository.deleteById(billId);
+    }
 }

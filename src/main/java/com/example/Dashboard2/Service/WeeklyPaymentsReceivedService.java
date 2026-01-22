@@ -186,14 +186,14 @@ public class WeeklyPaymentsReceivedService {
             repo.save(newExpense);
         }
     }
-    public void recalculateWeeklyAdvanceRefundPayment(int weekNumber) {
+    public void recalculateWeeklyAdvanceRefundPayment(int weekNumber, String date) {
         String today = LocalDate.now().toString(); // yyyy-MM-dd format
         Double totalRefunds = advancePortalRepository.sumRefundsByWeekDateAndMode(
-                weekNumber, today, "Refund", "Cash"
+                weekNumber, date, "Refund", "Cash"
         );
         if (totalRefunds != null && totalRefunds > 0) {
             WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
-                    LocalDate.now(), weekNumber, "Project Advance Refund"
+                    LocalDate.parse(date), weekNumber, "Project Advance Refund"
             );
             if (existing != null) {
                 existing.setAmount(totalRefunds);
@@ -211,14 +211,14 @@ public class WeeklyPaymentsReceivedService {
             }
         }
     }
-    public void recalculateWeeklyStaffAdvanceRefundPayment(int weekNumber) {
+    public void recalculateWeeklyStaffAdvanceRefundPayment(int weekNumber, String date) {
         String today = LocalDate.now().toString(); // yyyy-MM-dd format
         Double totalRefunds = staffAdvancePortalRepository.sumRefundsByWeekDateAndMode(
-                weekNumber, today, "Refund", "Cash"
+                weekNumber, date, "Refund", "Cash"
         );
         if (totalRefunds != null && totalRefunds > 0) {
             WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
-                    LocalDate.now(), weekNumber, "Staff Advance Refund"
+                    LocalDate.parse(date), weekNumber, "Staff Advance Refund"
             );
             if (existing != null) {
                 existing.setAmount(totalRefunds);
@@ -236,15 +236,14 @@ public class WeeklyPaymentsReceivedService {
             }
         }
     }
-
-    public void recalculateWeeklyLoanAdvanceRefundPayment(int weekNumber) {
+    public void recalculateWeeklyLoanAdvanceRefundPayment(int weekNumber , String date) {
         String today = LocalDate.now().toString(); // yyyy-MM-dd format
         Double totalRefunds = loanPortalRepository.sumRefundsByWeekDateAndMode(
-                weekNumber, today, "Refund", "Cash"
+                weekNumber, date, "Refund", "Cash"
         );
         if (totalRefunds != null && totalRefunds > 0) {
             WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
-                    LocalDate.now(), weekNumber, "Loan Refund"
+                    LocalDate.parse(date), weekNumber, "Loan Refund"
             );
             if (existing != null) {
                 existing.setAmount(totalRefunds);

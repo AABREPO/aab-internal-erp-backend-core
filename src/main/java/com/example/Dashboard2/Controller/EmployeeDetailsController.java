@@ -34,6 +34,17 @@ public class EmployeeDetailsController {
     public List<EmployeeDetails> getAllEmployeeDetails() {
         return employeeDetailsService.getAllEmployeeDetails();
     }
+    // Get all Site Engineers
+    @GetMapping("/site_engineers")
+    public List<EmployeeDetails> getAllSiteEngineers() {
+        return employeeDetailsService.getAllSiteEngineers();
+    }
+
+    // Get employee by ID
+    @GetMapping("/get/{id}")
+    public EmployeeDetails getEmployeeById(@PathVariable Long id) {
+        return employeeDetailsService.getEmployeeById(id);
+    }
 
     // Delete Employee by ID
     @DeleteMapping("/delete/{id}")

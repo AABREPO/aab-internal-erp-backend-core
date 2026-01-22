@@ -60,6 +60,10 @@ public class VendorPaymentsTrackerController {
             @RequestParam boolean paid) {
         return service.updateBillPaid(billId, paid);
     }
+    @PutMapping("/bill/{billId}/duplicate")
+    public VendorPaymentsTrackerBillVerification updateDuplicateBill(@PathVariable Long billId, @RequestParam boolean duplicate){
+        return service.updateDuplicateBill(billId, duplicate);
+    }
     // Update send_request field
     @PutMapping("/tracker/{trackerId}/send-request")
     public VendorPaymentsTracker updateSendRequest(
@@ -106,5 +110,11 @@ public class VendorPaymentsTrackerController {
     @GetMapping("/trackers/fully-paid-verified/all-data")
     public List<java.util.Map<String, Object>> getFullyPaidAndVerifiedTrackerData() {
         return service.getFullyPaidAndVerifiedTrackerData();
+    }
+    // Delete a bill verification record
+    @DeleteMapping("/bill-verification/{billId}")
+    public ResponseEntity<String> deleteBillVerification(@PathVariable Long billId) {
+        service.deleteBillVerification(billId);
+        return ResponseEntity.ok("Bill verification deleted successfully with ID: " + billId);
     }
 }

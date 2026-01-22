@@ -2,6 +2,7 @@ package com.example.Dashboard2.Service;
 
 import com.example.Dashboard2.Entity.POBrandList;
 import com.example.Dashboard2.Entity.POModelList;
+import com.example.Dashboard2.Entity.PurchaseOrder;
 import com.example.Dashboard2.Repository.POBrandListRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,10 @@ public class POBrandListService {
     }
     public List<POBrandList> getAllPOBrandList(){
         return poBrandListRepository.findAll();
+    }
+    public POBrandList getBrandById(Long id){
+        return poBrandListRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Brand With ID" + id +"Not Found"));
     }
     public POBrandList updatePOBrandList(Long id, POBrandList poBrandList){
         Optional<POBrandList> existingPOBrandList = poBrandListRepository.findById(id);

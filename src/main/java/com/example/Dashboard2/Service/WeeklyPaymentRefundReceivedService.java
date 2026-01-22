@@ -41,9 +41,9 @@ public class WeeklyPaymentRefundReceivedService {
     public void deleteRefundReceived(Long id){
         WeeklyPaymentRefundReceived existing = refundReceivedRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Refund Received not found"));
-        refundReceivedRepository.deleteById(id);
 
         paymentsReceivedService.recalculateWeeklyRefundPayment(existing.getWeeklyNumber(), existing.getDate());
+        refundReceivedRepository.deleteById(id);
     }
     public WeeklyPaymentRefundReceived editRefundReceived(Long id, String username, WeeklyPaymentRefundReceived updatedRefundReceived) {
         WeeklyPaymentRefundReceived existing = refundReceivedRepository.findById(id)

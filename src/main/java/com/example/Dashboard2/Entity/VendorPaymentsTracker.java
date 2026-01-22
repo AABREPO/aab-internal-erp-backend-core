@@ -25,6 +25,9 @@ public class VendorPaymentsTracker {
     @JsonProperty("no_of_bills")
     private Long noOfBills;
 
+    @JsonProperty("extra_bills")
+    private Long extraBills;
+
     @JsonProperty("total_amount")
     private double totalAmount;
 
@@ -86,6 +89,14 @@ public class VendorPaymentsTracker {
     }
     public void setNoOfBills(Long noOfBills) {
         this.noOfBills = noOfBills;
+    }
+
+    public Long getExtraBills() {
+        return extraBills;
+    }
+
+    public void setExtraBills(Long extraBills) {
+        this.extraBills = extraBills;
     }
 
     public double getTotalAmount() {

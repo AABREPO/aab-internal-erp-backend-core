@@ -27,7 +27,10 @@ public class POItemNameListController {
     public List<POItemNameList> getAllPOItemNames() {
         return poItemNameListService.getAllPOItemNameList();
     }
-
+    @GetMapping("get/{id}")
+    public ResponseEntity<POItemNameList> getItemNameById(@PathVariable Long id){
+        return ResponseEntity.ok(poItemNameListService.getPOItemNameById(id));
+    }
     // Update only the item name (not the category)
     @PutMapping("/edit/{id}")
     public POItemNameList updateItemName(@PathVariable Long id, @RequestBody POItemNameList updatedPOItemName) {

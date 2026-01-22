@@ -36,6 +36,12 @@ public class POTypeColorListService {
     public List<POTypeColorList> getAllPoTypeColorList(){
         return poTypeColorListRepository.findAll();
     }
+
+    public POTypeColorList getPOTypeColorById(Long id){
+        return poTypeColorListRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("PO Type Color With ID " + id + "Not Found"));
+    }
+
     public POTypeColorList updatePOTypeColorList(Long id, POTypeColorList poTypeColorList){
         Optional<POTypeColorList> existingPOTypeColorList = poTypeColorListRepository.findById(id);
         if (existingPOTypeColorList.isPresent()){

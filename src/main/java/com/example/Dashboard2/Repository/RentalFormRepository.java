@@ -9,11 +9,7 @@ import java.util.List;
 @Repository
 public interface RentalFormRepository extends JpaRepository<RentalForm, Long> {
 
-    @Query(value = """
-        SELECT * FROM rental_form
-        WHERE STR_TO_DATE(paid_on_date, '%Y-%m-%d') >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
-          AND STR_TO_DATE(paid_on_date, '%Y-%m-%d') < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
-        """, nativeQuery = true)
+    @Query(value = "SELECT * FROM rental_form WHERE paid_on_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND paid_on_date < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)", nativeQuery = true)
     List<RentalForm> findCurrentMonthEntries();
 
     @Query(value = """

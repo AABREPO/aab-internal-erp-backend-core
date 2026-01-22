@@ -15,13 +15,11 @@ import java.util.List;
 public class WeeklyPaymentsReceivedController {
     private final WeeklyPaymentsReceivedService paymentsService;
     private final WeeklyPaymentExpenseService expenseService;
-
     public WeeklyPaymentsReceivedController(WeeklyPaymentsReceivedService paymentsService,
                                       WeeklyPaymentExpenseService expenseService) {
         this.paymentsService = paymentsService;
         this.expenseService = expenseService;
     }
-
     @GetMapping("/week/{weekNumber}")
     public java.util.List<WeeklyPaymentsReceived> getByWeek(@PathVariable Integer weekNumber) {
         return paymentsService.getPaymentsByWeek(weekNumber);
@@ -30,12 +28,10 @@ public class WeeklyPaymentsReceivedController {
     public List<WeeklyPaymentsReceived> getAllTypes(){
         return paymentsService.getAllWeeklyPaymentsReceived();
     }
-
     @PostMapping("/save")
     public WeeklyPaymentsReceived save(@RequestBody WeeklyPaymentsReceived payment) {
         return paymentsService.savePayment(payment);
     }
-
     @GetMapping("/current-week")
     public Integer getCurrentWeekNumber() {
         Integer max = paymentsService.getMaxWeeklyNumber();
@@ -56,18 +52,17 @@ public class WeeklyPaymentsReceivedController {
             @RequestParam String closureType,
             @RequestParam(required = false, defaultValue = "false") boolean carryForward,
             @RequestParam(required = false, defaultValue = "0") double carryAmount,
-            @RequestParam(required = false, defaultValue = "0") double discountAmount) {
-
-        Integer currentWeek = paymentsService.getMaxWeeklyNumber();
-        if (currentWeek == null) {
-            currentWeek = paymentsService.getCurrentCalendarWeek();
+            @RequestParam(required = false, defaultValue = "0") double discountAmount,
+            @RequestParam(required = false) Integer currentWeek) {  // Add this parameter
+        Integer weekToClose = currentWeek != null ? currentWeek : paymentsService.getMaxWeeklyNumber();
+        if (weekToClose == null) {
+            weekToClose = paymentsService.getCurrentCalendarWeek();
         }
-        int nextWeek = currentWeek + 1;
-
+        int nextWeek = weekToClose + 1;
+        // ... rest of the code using weekToClose instead of currentWeek
         // Close current periods
         paymentsService.closeCurrentPeriod(currentWeek);
         expenseService.closeCurrentPeriod(currentWeek);
-
         if (carryForward && carryAmount > 0) {
             WeeklyPaymentsReceived carryPayment = new WeeklyPaymentsReceived();
             carryPayment.setDate(LocalDate.now());
@@ -78,13 +73,38 @@ public class WeeklyPaymentsReceivedController {
             carryPayment.setStatus(false);
             carryPayment.setPeriodStartDate(LocalDate.now());
             carryPayment.setDiscountAmount(discountAmount);
-
             paymentsService.savePayment(carryPayment);
         }
-
         return nextWeek;
     }
-
+    @PostMapping("/account")
+    public Integer accountClosure(
+            @RequestParam String closureType,
+            @RequestParam(required = false, defaultValue = "false") boolean carryForward,
+            @RequestParam(required = false, defaultValue = "0") double carryAmount,
+            @RequestParam(required = false, defaultValue = "0") double discountAmount) {
+        Integer currentWeek = paymentsService.getMaxWeeklyNumber();
+        if (currentWeek == null) {
+            currentWeek = paymentsService.getCurrentCalendarWeek();
+        }
+        int nextWeek = currentWeek + 1;
+        // Close current periods
+        paymentsService.closeCurrentPeriod(currentWeek);
+        expenseService.closeCurrentPeriod(currentWeek);
+        if (carryForward && carryAmount > 0) {
+            WeeklyPaymentsReceived carryPayment = new WeeklyPaymentsReceived();
+            carryPayment.setDate(LocalDate.now());
+            carryPayment.setAmount(carryAmount);
+            carryPayment.setType(closureType);
+            int targetWeek = "Handover".equalsIgnoreCase(closureType) ? currentWeek : nextWeek;
+            carryPayment.setWeeklyNumber(targetWeek);
+            carryPayment.setStatus(false);
+            carryPayment.setPeriodStartDate(LocalDate.now());
+            carryPayment.setDiscountAmount(discountAmount);
+            paymentsService.savePayment(carryPayment);
+        }
+        return nextWeek;
+    }
     @GetMapping("/active_weeks")
     public List<Integer> getActiveWeeks() {
         return paymentsService.getAllActiveWeekNumbers();
@@ -93,17 +113,14 @@ public class WeeklyPaymentsReceivedController {
     public WeeklyPaymentsReceived updatePayment(@PathVariable Long id,@RequestParam String username, @RequestBody WeeklyPaymentsReceived payment) {
         return paymentsService.updatePayment(id, username ,payment);
     }
-
     @GetMapping("/last-closed-week")
     public Integer getLastClosedWeek() {
         return paymentsService.getLastClosedWeek(); // Add this method in service
     }
-
     @PostMapping("/update/save")
     public WeeklyPaymentsReceived savePaymentReceivedForSameWeeklyNumber(@RequestBody WeeklyPaymentsReceived paymentsReceived){
         return paymentsService.savePaymentReceivedForSameWeeklyNumber(paymentsReceived);
     }
-
     @PutMapping("/edit/{id}")
     public ResponseEntity<WeeklyPaymentsReceived> editPayment(
             @PathVariable Long id,

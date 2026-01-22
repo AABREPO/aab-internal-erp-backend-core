@@ -1,0 +1,12 @@
+package com.example.Dashboard2.Repository;
+
+import com.example.Dashboard2.Entity.InventoryIncomingPdfs;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface InventoryIncomingPdfsRepository extends JpaRepository<InventoryIncomingPdfs, Long> {
+    List<InventoryIncomingPdfs> findByInventoryManagementId(Long inventoryManagementId);
+}

@@ -41,9 +41,7 @@ public class MonthlyRentReportTask {
         if (paidOnDate == null || paidOnDate.trim().isEmpty()) {
             return paidOnDate;
         }
-        
         String trimmedDate = paidOnDate.trim();
-        
         // Try yyyy-MM-dd format first (expected format)
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -52,7 +50,6 @@ public class MonthlyRentReportTask {
         } catch (DateTimeParseException e) {
             // Not in yyyy-MM-dd format, try dd-MM-yyyy
         }
-        
         // Try dd-MM-yyyy format (current format being saved)
         try {
             DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -62,7 +59,6 @@ public class MonthlyRentReportTask {
         } catch (DateTimeParseException e) {
             // Try dd/MM/yyyy format as well
         }
-        
         // Try dd/MM/yyyy format
         try {
             DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -75,80 +71,59 @@ public class MonthlyRentReportTask {
             return paidOnDate;
         }
     }
-
     // Runs at 21:00 on the last day of every month
     @Scheduled(cron = "0 0 21 L * ?")
     public void generateAndUploadMonthlyRentReports(){
         try {
             System.out.println("==== Running Monthly Rent Report Task ====");
-
             int reportNumber = monthlyRentReportService.getNextMonthlyReportNumber();
-            System.out.println("Report Number"+ reportNumber);
             List<RentalForm> entries = rentalFormRepository.findCurrentMonthEntries();
-
             if (entries.isEmpty()) {
                 System.out.println("No rental entries found for this month. Skipping PDF generation.");
                 return;
             }
-
             for (RentalForm r : entries) {
-
                 // Set same report number for all entries
                 r.setMonthlyReportNumber(String.valueOf(reportNumber));
                 rentalFormRepository.save(r);
-
                 MonthlyRentReports reports = new MonthlyRentReports();
-
                 reports.setTimestamp(r.getTimestamp());
                 reports.setPaidOnDate(formatPaidOnDate(r.getPaidOnDate()));
                 reports.setFormType(r.getFormType());
                 reports.setShopNo(r.getShopNo());
                 reports.setTenantName(r.getTenantName());
-
                 // Shop Closure and Refund use refundAmount
                 if ("Shop Closure".equalsIgnoreCase(r.getFormType()) || "Refund".equalsIgnoreCase(r.getFormType())) {
                     reports.setAmount(r.getRefundAmount() != null ? r.getRefundAmount() : "0");
                 } else {
                     reports.setAmount(r.getAmount() != null ? r.getAmount() : "0");
                 }
-
                 reports.setForTheMonthOf(r.getForTheMonthOf());
                 reports.setPaymentMode(r.getPaymentMode());
                 reports.setEno(r.getEno());
                 reports.setReportNumber(reportNumber);
-
                 monthlyRentReportRepo.save(reports);
             }
-
             // Fetch entries for PDF
             List<MonthlyRentReports> savedEntries =
                     monthlyRentReportRepo.findByReportNumber(reportNumber);
-
             byte[] pdfData = PdfGenerator.generateMonthlyRentReportPdf(savedEntries, reportNumber);
-
             String fileName =
                     reportNumber + "_Monthly_Rent_Report_" +
                             LocalDate.now().format(DateTimeFormatter.ofPattern("dd_MM_yyyy")) +
                             ".pdf";
-
             Res response = monthlyRentReportService.uploadPdfToDrive(
                     new ByteArrayInputStream(pdfData), fileName);
-
             if (response.getStatus() == 200) {
-                System.out.println("PDF Uploaded Successfully: " + response.getUrl());
-
                 savedEntries.forEach(entry -> entry.setMonthlyReportUrl(response.getUrl()));
                 monthlyRentReportRepo.saveAll(savedEntries);
-
             } else {
                 System.err.println("PDF Upload Failed: " + response.getMessage());
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
     /**
      * Manual function to generate missed monthly rent reports
      * This can be called when a scheduled report was missed
@@ -160,7 +135,6 @@ public class MonthlyRentReportTask {
     public String generateMissedMonthlyRentReport(int year, int month) {
         return generateMissedMonthlyRentReport(year, month, false);
     }
-
     /**
      * Manual function to generate missed monthly rent reports
      * This can be called when a scheduled report was missed
@@ -172,21 +146,12 @@ public class MonthlyRentReportTask {
      */
     public String generateMissedMonthlyRentReport(int year, int month, boolean forceAll) {
         try {
-            System.out.println("==== Generating Missed Monthly Rent Report ====");
-            System.out.println("Year: " + year + ", Month: " + month);
-
             YearMonth yearMonth = YearMonth.of(year, month);
             // For missed reports: report header should show selected month - 1
             // e.g., if selecting November (when entries are entered), report should be for October
             YearMonth reportMonth = yearMonth.minusMonths(1);
-            
-            System.out.println("Looking for entries with timestamp in " + yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
-            System.out.println("Report will be generated for month: " + reportMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")));
-
             // Find all entries with timestamp in the specified month/year
             List<RentalForm> allEntries = rentalFormRepository.findAllEntriesByTimestampMonth(year, month);
-            System.out.println("Total entries found with timestamp in " + yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")) + ": " + allEntries.size());
-            
             // Count entries with and without report numbers (valid numeric report numbers)
             long entriesWithoutReport = allEntries.stream()
                 .filter(r -> {
@@ -202,9 +167,6 @@ public class MonthlyRentReportTask {
                     }
                 })
                 .count();
-            System.out.println("Entries without report number: " + entriesWithoutReport);
-            System.out.println("Entries with report number: " + (allEntries.size() - entriesWithoutReport));
-            
             // Show sample of entries for debugging (first 5 entries)
             System.out.println("Sample entries from first 5 results:");
             allEntries.stream().limit(5).forEach(r -> {
@@ -214,7 +176,6 @@ public class MonthlyRentReportTask {
                     ", forTheMonthOf: '" + r.getForTheMonthOf() + 
                     "', monthlyReportNumber: '" + (reportNum != null ? reportNum : "NULL") + "'");
             });
-
             // Find entries for the specified timestamp month that haven't been included in any report yet
             List<RentalForm> entries;
             if (forceAll) {
@@ -223,7 +184,6 @@ public class MonthlyRentReportTask {
             } else {
                 entries = rentalFormRepository.findEntriesByTimestampMonth(year, month);
                 System.out.println("Found " + entries.size() + " entries without valid report numbers");
-                
                 // If no unreported entries found but we have entries, they all have report numbers
                 // For missed reports, we should regenerate them with a new report number
                 if (entries.isEmpty() && !allEntries.isEmpty()) {
@@ -232,70 +192,54 @@ public class MonthlyRentReportTask {
                     entries = allEntries;
                 }
             }
-
             if (entries.isEmpty()) {
                 String message = "No rental entries found for " + yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")) + 
                                ". No entries exist with timestamp in this month.";
                 System.out.println(message);
                 return message;
             }
-
             System.out.println("Found " + entries.size() + " entries with timestamp in " + yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")) + 
                               " for " + reportMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")) + " report");
-
             int reportNumber = monthlyRentReportService.getNextMonthlyReportNumber();
             System.out.println("Report Number: " + reportNumber);
-
             for (RentalForm r : entries) {
                 // Set same report number for all entries
                 r.setMonthlyReportNumber(String.valueOf(reportNumber));
                 rentalFormRepository.save(r);
-
                 MonthlyRentReports reports = new MonthlyRentReports();
-
                 reports.setTimestamp(r.getTimestamp());
                 reports.setPaidOnDate(formatPaidOnDate(r.getPaidOnDate()));
                 reports.setFormType(r.getFormType());
                 reports.setShopNo(r.getShopNo());
                 reports.setTenantName(r.getTenantName());
-
                 // Shop Closure and Refund use refundAmount
                 if ("Shop Closure".equalsIgnoreCase(r.getFormType()) || "Refund".equalsIgnoreCase(r.getFormType())) {
                     reports.setAmount(r.getRefundAmount() != null ? r.getRefundAmount() : "0");
                 } else {
                     reports.setAmount(r.getAmount() != null ? r.getAmount() : "0");
                 }
-
                 reports.setForTheMonthOf(r.getForTheMonthOf());
                 reports.setPaymentMode(r.getPaymentMode());
                 reports.setEno(r.getEno());
                 reports.setReportNumber(reportNumber);
-
                 monthlyRentReportRepo.save(reports);
             }
-
             // Fetch entries for PDF
             List<MonthlyRentReports> savedEntries =
                     monthlyRentReportRepo.findByReportNumber(reportNumber);
-
             // Pass reportMonth to PDF generator so header shows selected month - 1
             byte[] pdfData = PdfGenerator.generateMonthlyRentReportPdf(savedEntries, reportNumber, reportMonth);
-
             String fileName =
                     reportNumber + "_Monthly_Rent_Report_" +
                             reportMonth.format(DateTimeFormatter.ofPattern("MMMM_yyyy")) +
                             "_" + LocalDate.now().format(DateTimeFormatter.ofPattern("dd_MM_yyyy")) +
                             ".pdf";
-
             Res response = monthlyRentReportService.uploadPdfToDrive(
                     new ByteArrayInputStream(pdfData), fileName);
-
             if (response.getStatus() == 200) {
                 System.out.println("PDF Uploaded Successfully: " + response.getUrl());
-
                 savedEntries.forEach(entry -> entry.setMonthlyReportUrl(response.getUrl()));
                 monthlyRentReportRepo.saveAll(savedEntries);
-
                 String successMessage = "Missed report generated successfully for " + 
                                       reportMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")) + 
                                       " (entries from " + yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")) + "). " +
@@ -312,7 +256,6 @@ public class MonthlyRentReportTask {
                 System.err.println("Note: The report data has been saved in the database. You can manually upload the PDF later or retry the upload when the Flask service is available.");
                 return errorMessage;
             }
-
         } catch (Exception e) {
             String errorMessage = "Error generating missed report for " + 
                                 YearMonth.of(year, month).format(DateTimeFormatter.ofPattern("MMMM yyyy")) + 
@@ -322,5 +265,4 @@ public class MonthlyRentReportTask {
             return errorMessage;
         }
     }
-
 }

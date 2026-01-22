@@ -54,6 +54,9 @@ public class WeeklyPaymentExpenseService {
     public List<WeeklyPaymentExpense> getExpensesByWeek(Integer weekNumber) {
         return repo.findByWeeklyNumber(weekNumber);
     }
+    public List<WeeklyPaymentExpense> getAllWeeklyExpenses(){
+        return repo.findAll();
+    }
     public WeeklyPaymentExpense saveExpense(WeeklyPaymentExpense expense) {
         Integer currentWeek = getMaxWeeklyNumber();
         if (currentWeek == null) {

@@ -33,6 +33,10 @@ public class POItemNameListService {
     public List<POItemNameList> getAllPOItemNameList(){
         return poItemNameListRepo.findAll();
     }
+    public POItemNameList getPOItemNameById(Long id){
+        return poItemNameListRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("PO Item Name With ID" + id + "Not Found"));
+    }
 
     public POItemNameList editItemName(Long id, POItemNameList updatedPOItemName){
         Optional<POItemNameList> existingPOItemName = poItemNameListRepo.findById(id);
