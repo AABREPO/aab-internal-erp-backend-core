@@ -223,7 +223,6 @@ public class VendorPaymentsTrackerService {
                 })
                 .collect(java.util.stream.Collectors.toList());
     }
-
     // Delete a bill verification record
     public void deleteBillVerification(Long billId) {
         if (!billRepository.existsById(billId)) {
