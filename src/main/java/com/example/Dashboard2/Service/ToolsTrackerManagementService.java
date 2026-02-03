@@ -53,6 +53,9 @@ public class ToolsTrackerManagementService {
     public Long getServiceCount(){
         return toolsTrackerManagementRepository.countByToolsEntryTypeAndDeleteStatusFalse("service");
     }
+    public Long getRelocationCount(){
+        return toolsTrackerManagementRepository.countByToolsEntryTypeAndDeleteStatusFalse("relocation");
+    }
     @Transactional
     public ToolsTrackerManagement update(Long id, ToolsTrackerManagement updatedData, String editedBy) {
         return toolsTrackerManagementRepository.findById(id)

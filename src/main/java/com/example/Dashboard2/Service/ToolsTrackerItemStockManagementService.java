@@ -95,7 +95,6 @@ public class ToolsTrackerItemStockManagementService {
                     if (updated.getToolStatus() != null) {
                         existing.setToolStatus(updated.getToolStatus());
                     }
-
                     existing.setTimestamp(LocalDateTime.now());
                     return toolsTrackerItemStockManagementRepository.save(existing);
                 })

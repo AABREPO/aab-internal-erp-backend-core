@@ -102,6 +102,11 @@ public class ToolsTrackerManagementController {
         return ResponseEntity.ok(toolsTrackerManagementService.getServiceCount());
     }
 
+    @GetMapping("/getRelocationCount")
+    public ResponseEntity<Long> getRelocation(){
+        return ResponseEntity.ok(toolsTrackerManagementService.getRelocationCount());
+    }
+
     // Machine Status endpoints
     @PutMapping("/updateMachineStatus/{itemId}")
     public ResponseEntity<ToolsTrackerItemNameTable> updateMachineStatus(

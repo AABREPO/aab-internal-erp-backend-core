@@ -33,6 +33,8 @@ public class ToolsTrackerItemNameTable {
     private String machineStatus;
     @JsonProperty("description")
     private String description;
+    @JsonProperty("home_location_id")
+    private String homeLocationId;
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "tools_tracker_item_table_id")
     @JsonProperty("tools_item_live_images")

@@ -26,6 +26,8 @@ public class ToolsTrackerItemStockManagement {
     private String itemIdsId;
     @JsonProperty("model")
     private String model;
+    @JsonProperty("home_location_id")
+    private String homeLocationId;
     @JsonProperty("machine_number")
     private String machineNumber;
     @JsonProperty("purchase_store_id")
