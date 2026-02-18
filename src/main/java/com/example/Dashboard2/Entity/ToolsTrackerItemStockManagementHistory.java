@@ -40,8 +40,8 @@ public class ToolsTrackerItemStockManagementHistory {
     @JsonProperty("old_model")
     private String oldModel;
     
-    @JsonProperty("old_machine_number")
-    private String oldMachineNumber;
+    @JsonProperty("old_machine_number_id")
+    private String oldMachineNumberId;
     
     @JsonProperty("old_purchase_store_id")
     private String oldPurchaseStoreId;
@@ -80,8 +80,8 @@ public class ToolsTrackerItemStockManagementHistory {
     @JsonProperty("new_model")
     private String newModel;
     
-    @JsonProperty("new_machine_number")
-    private String newMachineNumber;
+    @JsonProperty("new_machine_number_id")
+    private String newMachineNumberId;
     
     @JsonProperty("new_purchase_store_id")
     private String newPurchaseStoreId;

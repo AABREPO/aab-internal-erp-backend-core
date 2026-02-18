@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 @Service
 public class WeeklyPaymentExpenseService {
 
@@ -54,8 +55,14 @@ public class WeeklyPaymentExpenseService {
     public List<WeeklyPaymentExpense> getExpensesByWeek(Integer weekNumber) {
         return repo.findByWeeklyNumber(weekNumber);
     }
+    public List<WeeklyPaymentExpense> getExpensesByWeekAndBranch(Integer weekNumber, Long branchId) {
+        return repo.findByWeeklyNumberAndBranchId(weekNumber, branchId);
+    }
     public List<WeeklyPaymentExpense> getAllWeeklyExpenses(){
         return repo.findAll();
+    }
+    public List<WeeklyPaymentExpense> getAllWeeklyExpensesByBranch(Long branchId){
+        return repo.findByBranchId(branchId);
     }
     public WeeklyPaymentExpense saveExpense(WeeklyPaymentExpense expense) {
         Integer currentWeek = getMaxWeeklyNumber();
@@ -74,12 +81,13 @@ public class WeeklyPaymentExpenseService {
         return repo.save(expense);
     }
     @Transactional
-    public void closeCurrentPeriod(Integer weekNumber) {
-        repo.closePeriod(weekNumber, LocalDate.now());
+    public void closeCurrentPeriod(Integer weekNumber, Long branchId) {
+        repo.closePeriod(weekNumber, branchId, LocalDate.now());
     }
     public WeeklyPaymentExpense editExpense(Long id,String username, WeeklyPaymentExpense updatedExpense) {
         WeeklyPaymentExpense existing = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Expense not found"));
+        validateBranchNotEditable(existing, updatedExpense);
 
         WeeklyPaymentExpenseAudit audit = new WeeklyPaymentExpenseAudit();
         audit.setWeeklyPaymentExpenseId(existing.getId());
@@ -116,7 +124,7 @@ public class WeeklyPaymentExpenseService {
 
         // 🔥 CALL HERE
         if (saved.isStatus()) {
-            updateCarryForwardBalance(saved.getWeeklyNumber());
+            updateCarryForwardBalance(saved.getWeeklyNumber(), saved.getBranchId());
         }
 
         return saved;
@@ -126,6 +134,7 @@ public class WeeklyPaymentExpenseService {
         Integer lastClosedWeek = repo.findLastClosedWeekNumber();
         WeeklyPaymentExpense existing = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Expense not found"));
+        validateBranchNotEditable(existing, updatedExpense);
         if (!existing.getWeeklyNumber().equals(lastClosedWeek)) {
             throw new IllegalStateException("Only the last closed week's expenses can be edited.");
         }
@@ -162,14 +171,14 @@ public class WeeklyPaymentExpenseService {
         existing.setExpensesEntryId(updatedExpense.getExpensesEntryId());
         WeeklyPaymentExpense saved = repo.save(existing);
         if (saved.isStatus()) {
-            updateCarryForwardBalance(saved.getWeeklyNumber());
+            updateCarryForwardBalance(saved.getWeeklyNumber(), saved.getBranchId());
         }
         return saved;
     }
 
     public WeeklyPaymentExpense saveExpenseForSameWeeklyNumber(WeeklyPaymentExpense weeklyPaymentExpense){
         WeeklyPaymentExpense saved = repo.save(weeklyPaymentExpense);
-        updateCarryForwardBalance(weeklyPaymentExpense.getWeeklyNumber());
+        updateCarryForwardBalance(weeklyPaymentExpense.getWeeklyNumber(), weeklyPaymentExpense.getBranchId());
         return saved;
     }
 
@@ -177,9 +186,10 @@ public class WeeklyPaymentExpenseService {
         WeeklyPaymentExpense expense = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Not Found " + id));
         Integer weekNumber = expense.getWeeklyNumber();
+        Long branchId = expense.getBranchId();
         repo.deleteById(id);
         // Always run this
-        updateCarryForwardBalance(weekNumber);
+        updateCarryForwardBalance(weekNumber, branchId);
     }
 
     public void deleteWeeklyPaymentExpenseWithoutCarryForward(Long id){
@@ -187,11 +197,17 @@ public class WeeklyPaymentExpenseService {
                 .orElseThrow(() -> new RuntimeException("Not Found" + id));
         repo.deleteById(id);
     }
-    private void updateCarryForwardBalance(Integer weekNumber) {
-        Double totalExpenses = repo.getTotalExpenseByWeek(weekNumber);
-        Double totalPayments = paymentsRepo.getTotalPaymentsByWeek(weekNumber);
+    private void updateCarryForwardBalance(Integer weekNumber, Long branchId) {
+        Double totalExpenses = branchId != null
+                ? repo.getTotalExpenseByWeekAndBranch(weekNumber, branchId)
+                : repo.getTotalExpenseByWeek(weekNumber);
+        Double totalPayments = branchId != null
+                ? paymentsRepo.getTotalPaymentsByWeekAndBranch(weekNumber, branchId)
+                : paymentsRepo.getTotalPaymentsByWeek(weekNumber);
         double balance = (totalPayments != null ? totalPayments : 0) - (totalExpenses != null ? totalExpenses : 0);
-        WeeklyPaymentsReceived carryForwardRow = paymentsRepo.findCarryForwardRow(weekNumber + 1);
+        WeeklyPaymentsReceived carryForwardRow = branchId != null
+                ? paymentsRepo.findCarryForwardRowByWeekAndBranch(weekNumber + 1, branchId)
+                : paymentsRepo.findCarryForwardRow(weekNumber + 1);
         if (carryForwardRow != null) {
             Double discount = carryForwardRow.getDiscountAmount();
             if (discount != null) {
@@ -199,6 +215,12 @@ public class WeeklyPaymentExpenseService {
             }
             carryForwardRow.setAmount(balance);
             paymentsRepo.save(carryForwardRow);
+        }
+    }
+
+    private void validateBranchNotEditable(WeeklyPaymentExpense existing, WeeklyPaymentExpense updatedExpense) {
+        if (updatedExpense.getBranchId() != null && !Objects.equals(existing.getBranchId(), updatedExpense.getBranchId())) {
+            throw new IllegalArgumentException("Branch ID cannot be changed for an existing expense.");
         }
     }
     public WeeklyPaymentExpense saveOrUpdateDailyExpense(WeeklyPaymentExpense newExpense) {
@@ -233,15 +255,15 @@ public class WeeklyPaymentExpenseService {
             return repo.save(newExpense);
         }
     }
-    public void recalculateWeeklyDailyExpense(Integer weeklyNumber, LocalDate date) {
-        // ✅ Sum of amount + extra_amount from daily entries
-        Double totalDailyExpenses = dailyEntryRepo.sumAmountAndExtraByWeekAndDate(weeklyNumber, date);
+    public void recalculateWeeklyDailyExpense(Integer weeklyNumber, LocalDate date, Long branchId) {
+        // ✅ Sum of amount + extra_amount from daily entries (branch-specific)
+        Double totalDailyExpenses = dailyEntryRepo.sumAmountAndExtraByWeekAndDateAndBranch(weeklyNumber, date, branchId);
         if (totalDailyExpenses == null) {
             totalDailyExpenses = 0.0;
         }
-        // ✅ Fetch all matching weekly expense rows
+        // ✅ Fetch all matching weekly expense rows for branch
         List<WeeklyPaymentExpense> existingList =
-                repo.findByDateAndWeeklyNumberAndType(date, weeklyNumber, "Daily");
+                repo.findByDateAndWeeklyNumberAndTypeAndBranchId(date, weeklyNumber, "Daily", branchId);
         if (!existingList.isEmpty()) {
             // Update the FIRST one and delete duplicates (optional)
             WeeklyPaymentExpense existing = existingList.get(0);
@@ -265,6 +287,7 @@ public class WeeklyPaymentExpenseService {
             newExpense.setContractorId(117L);
             newExpense.setProjectId(8L);
             newExpense.setVendorId(null);
+            newExpense.setBranchId(branchId);
             newExpense.setStatus(false);
             newExpense.setPeriodStartDate(LocalDate.now());
             repo.save(newExpense);

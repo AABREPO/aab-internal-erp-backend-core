@@ -46,11 +46,17 @@ public class ToolsTrackerItemNameTableHistory {
     @JsonProperty("old_model")
     private String oldModel;
     
-    @JsonProperty("old_machine_number")
-    private String oldMachineNumber;
+    @JsonProperty("old_machine_number_id")
+    private String oldMachineNumberId;
     
     @JsonProperty("old_quantity")
     private int oldQuantity;
+
+    @JsonProperty("old_home_location_id")
+    private String oldHomeLocationId;
+
+    @JsonProperty("old_description")
+    private String oldDescription;
     
     // New values
     @JsonProperty("new_timestamp")
@@ -68,9 +74,15 @@ public class ToolsTrackerItemNameTableHistory {
     @JsonProperty("new_model")
     private String newModel;
     
-    @JsonProperty("new_machine_number")
-    private String newMachineNumber;
+    @JsonProperty("new_machine_number_id")
+    private String newMachineNumberId;
     
     @JsonProperty("new_quantity")
     private int newQuantity;
+
+    @JsonProperty("new_home_location_id")
+    private String newHomeLocationId;
+
+    @JsonProperty("new_description")
+    private String newDescription;
 }

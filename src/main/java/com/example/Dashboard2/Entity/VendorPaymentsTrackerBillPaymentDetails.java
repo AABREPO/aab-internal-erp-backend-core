@@ -42,6 +42,8 @@ public class VendorPaymentsTrackerBillPaymentDetails {
     private String accountNumber;
     @JsonProperty("bill_url")
     private String billUrl;
+    @JsonProperty("branch_id")
+    private Long branchId;
 
     public Long getId() {
         return id;
@@ -153,5 +155,13 @@ public class VendorPaymentsTrackerBillPaymentDetails {
 
     public void setBillUrl(String billUrl) {
         this.billUrl = billUrl;
+    }
+
+    public Long getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(Long branchId) {
+        this.branchId = branchId;
     }
 }

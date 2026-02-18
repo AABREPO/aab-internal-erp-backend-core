@@ -16,11 +16,18 @@ public class WeeklyPaymentExpenseController {
         this.service = service;
     }
     @GetMapping("/week/{weekNumber}")
-    public List<WeeklyPaymentExpense> getByWeek(@PathVariable Integer weekNumber) {
+    public List<WeeklyPaymentExpense> getByWeek(@PathVariable Integer weekNumber,
+                                                @RequestParam(required = false) Long branchId) {
+        if (branchId != null) {
+            return service.getExpensesByWeekAndBranch(weekNumber, branchId);
+        }
         return service.getExpensesByWeek(weekNumber);
     }
     @GetMapping("/getAll")
-    public List<WeeklyPaymentExpense> getAllExpenses(){
+    public List<WeeklyPaymentExpense> getAllExpenses(@RequestParam(required = false) Long branchId){
+        if (branchId != null) {
+            return service.getAllWeeklyExpensesByBranch(branchId);
+        }
         return service.getAllWeeklyExpenses();
     }
     @PostMapping("/save-daily")

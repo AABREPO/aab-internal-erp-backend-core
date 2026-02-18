@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface LoanPortalRepository extends JpaRepository<LoanPortal, Long> {
     List<LoanPortal> findByEntryNo(Long entryNo);
+    List<LoanPortal> findByBranchId(Long branchId);
 
     @Query("SELECT MAX(l.entryNo) FROM LoanPortal l")
     Long findMaxEntry();
@@ -25,4 +26,17 @@ public interface LoanPortalRepository extends JpaRepository<LoanPortal, Long> {
                                        @Param("date") String date,
                                        @Param("type") String type,
                                        @Param("loanPaymentMode") String loanPaymentMode);
+
+    @Query("SELECT SUM(a.loanRefundAmount) " +
+            "FROM LoanPortal a " +
+            "WHERE a.weekNo = :weekNo " +
+            "AND a.date = :date " +
+            "AND a.type = :type " +
+            "AND a.loanPaymentMode = :loanPaymentMode " +
+            "AND a.branchId = :branchId")
+    Double sumRefundsByWeekDateAndModeAndBranch(@Param("weekNo") Integer weekNo,
+                                                @Param("date") String date,
+                                                @Param("type") String type,
+                                                @Param("loanPaymentMode") String loanPaymentMode,
+                                                @Param("branchId") Long branchId);
 }

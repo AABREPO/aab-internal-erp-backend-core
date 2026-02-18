@@ -8,17 +8,22 @@ import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Setter
-public class ToolsMachineNumberListWithStatus {
+public class ToolsMachineNumberStatusDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @JsonProperty("timestamp")
-    private String timestamp;
-    @JsonProperty("machine_number")
-    private String MachineNumber;
-    @JsonProperty("tool_status")
-    private String toolStatus;
+    private LocalDateTime timestamp;
+    @JsonProperty("created_by")
+    private String createdBy;
+    @JsonProperty("item_ids_id")
+    private String itemIdsId;
+    @JsonProperty("machine_number_id")
+    private String machineNumberId;
+    @JsonProperty("machine_status")
+    private String machineStatus;
 }

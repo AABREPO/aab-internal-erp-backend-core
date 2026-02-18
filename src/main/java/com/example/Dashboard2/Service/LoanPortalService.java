@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -87,6 +88,7 @@ public class LoanPortalService {
         }
         staffAdvance.setFileUrl(loanPortal.getFileUrl());
         staffAdvance.setLoanPortalId(null);
+        staffAdvance.setBranchId(loanPortal.getBranchId());
         return staffAdvance;
     }
     @Transactional
@@ -100,7 +102,7 @@ public class LoanPortalService {
         if (isFromStaffAdvance) {
             // Save positive amount entry directly (coming from StaffAdvancePortal)
             LoanPortal saved = repository.save(loanPortal);
-            paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(),saved.getDate());
+            paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(), saved.getDate(), saved.getBranchId());
             return saved;
         }
         
@@ -129,6 +131,7 @@ public class LoanPortalService {
                 loanEntry.setProjectId(loanPortal.getProjectId() != null ? loanPortal.getProjectId() : 0);
                 loanEntry.setTransferProjectId(loanPortal.getTransferProjectId() != null ? loanPortal.getTransferProjectId() : 0);
                 loanEntry.setAdvancePortalId(loanPortal.getAdvancePortalId());
+                loanEntry.setBranchId(loanPortal.getBranchId());
 
                 LoanPortal saved = repository.save(loanEntry);
                 // Create and save positive amount entry in StaffAdvancePortal
@@ -137,7 +140,7 @@ public class LoanPortalService {
                 // Link StaffAdvancePortal ID back to LoanPortal
                 saved.setStaffPortalId(savedStaffAdvance.getStaffAdvancePortalId());
                 repository.save(saved);
-                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(), saved.getDate(), saved.getBranchId());
                 return saved;
             }
             // Existing Transfer logic for Purpose to Purpose and Purpose to Site
@@ -156,7 +159,7 @@ public class LoanPortalService {
             }
         }
         LoanPortal saved = repository.save(loanPortal);
-        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(saved.getWeekNo(), saved.getDate(), saved.getBranchId());
         return saved;
     }
     private LoanPortal createTransferEntry(LoanPortal source, boolean isFrom, String type) {
@@ -172,6 +175,7 @@ public class LoanPortalService {
         entry.setDescription(source.getDescription());
         entry.setLoanRefundAmount(0.0);
         entry.setAdvancePortalId(source.getAdvancePortalId());
+        entry.setBranchId(source.getBranchId());
         if ("Purpose to Purpose".equals(type)) {
             entry.setFromPurposeId(isFrom ? source.getFromPurposeId() : source.getToPurposeId());
             entry.setToPurposeId(isFrom ? source.getToPurposeId() : source.getFromPurposeId());
@@ -192,6 +196,11 @@ public class LoanPortalService {
             throw new EntityNotFoundException("Loan portal not found with id: " + id);
         }
         LoanPortal existingLoan = optionalLoan.get();
+        if (updatedLoan.getBranchId() == null) {
+            updatedLoan.setBranchId(existingLoan.getBranchId());
+        } else if (!Objects.equals(existingLoan.getBranchId(), updatedLoan.getBranchId())) {
+            throw new IllegalArgumentException("Branch ID cannot be changed for an existing loan portal entry.");
+        }
         // --- Create audit record ---
         LoanPortalAudit audit = new LoanPortalAudit();
         audit.setLoanPortalId(existingLoan.getLoanPortalId());
@@ -252,10 +261,11 @@ public class LoanPortalService {
                 existingLoan.setToPurposeId(0L);
                 existingLoan.setTransferProjectId(updatedLoan.getTransferProjectId());
                 existingLoan.setProjectId(0);
+                existingLoan.setBranchId(updatedLoan.getBranchId());
                 initializeDefaultsIfMissing(existingLoan);
                 repository.save(existingLoan);
                 // ✅ Trigger recalculation
-                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate());
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate(), existingLoan.getBranchId());
                 return List.of(existingLoan);
             }
             // Case 2: Purpose -> Purpose
@@ -283,6 +293,7 @@ public class LoanPortalService {
                 fromEntry.setProjectId(0);
                 fromEntry.setTransferProjectId(0);
                 fromEntry.setWeekNo(existingLoan.getWeekNo());
+                fromEntry.setBranchId(updatedLoan.getBranchId());
 
                 toEntry.setDate(updatedLoan.getDate());
                 toEntry.setVendorId(updatedLoan.getVendorId());
@@ -295,11 +306,12 @@ public class LoanPortalService {
                 toEntry.setProjectId(0);
                 toEntry.setTransferProjectId(0);
                 toEntry.setWeekNo(existingLoan.getWeekNo());
+                toEntry.setBranchId(updatedLoan.getBranchId());
 
                 fromEntry = repository.save(fromEntry);
                 toEntry = repository.save(toEntry);
                 // ✅ Trigger recalculation
-                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(fromEntry.getWeekNo(), fromEntry.getDate());
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(fromEntry.getWeekNo(), fromEntry.getDate(), fromEntry.getBranchId());
                 return List.of(fromEntry, toEntry);
             }
             // Case 3: Purpose -> Site
@@ -316,10 +328,11 @@ public class LoanPortalService {
                 existingLoan.setToPurposeId(0L);
                 existingLoan.setTransferProjectId(updatedLoan.getTransferProjectId());
                 existingLoan.setProjectId(0);
+                existingLoan.setBranchId(updatedLoan.getBranchId());
                 initializeDefaultsIfMissing(existingLoan);
                 repository.save(existingLoan);
                 // ✅ Trigger recalculation
-                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate());
+                paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate(), existingLoan.getBranchId());
                 return List.of(existingLoan);
             }
         }
@@ -346,19 +359,24 @@ public class LoanPortalService {
         existingLoan.setProjectId(updatedLoan.getProjectId());
         existingLoan.setTransferProjectId(updatedLoan.getTransferProjectId());
         existingLoan.setEntryNo(updatedLoan.getEntryNo());
+        existingLoan.setBranchId(updatedLoan.getBranchId());
         initializeDefaultsIfMissing(existingLoan);
         existingLoan.setDescription(updatedLoan.getDescription());
         existingLoan.setFileUrl(updatedLoan.getFileUrl());
         repository.save(existingLoan);
         // ✅ Trigger recalculation
-        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate());
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate(), existingLoan.getBranchId());
         return List.of(existingLoan);
     }
-    public List<LoanPortal> getAll() {
-        return repository.findAll();
+    public List<LoanPortal> getAll(Long branchId) {
+        return branchId != null ? repository.findByBranchId(branchId) : repository.findAll();
     }
-    public Optional<LoanPortal> getById(Long id) {
-        return repository.findById(id);
+    public Optional<LoanPortal> getById(Long id, Long branchId) {
+        Optional<LoanPortal> loan = repository.findById(id);
+        if (branchId == null) {
+            return loan;
+        }
+        return loan.filter(p -> Objects.equals(p.getBranchId(), branchId));
     }
     @Transactional
     public void deleteById(Long id) {
@@ -367,10 +385,16 @@ public class LoanPortalService {
         int weekNumber = existing.getWeekNo();
         repository.deleteById(id);
         // ✅ Trigger recalculation
-        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(weekNumber, existing.getDate());
+        paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(weekNumber, existing.getDate(), existing.getBranchId());
     }
-    public List<LoanPortal> findByEntryNo(Long entryNo) {
-        return repository.findByEntryNo(entryNo);
+    public List<LoanPortal> findByEntryNo(Long entryNo, Long branchId) {
+        List<LoanPortal> entries = repository.findByEntryNo(entryNo);
+        if (branchId == null) {
+            return entries;
+        }
+        return entries.stream()
+                .filter(p -> Objects.equals(p.getBranchId(), branchId))
+                .toList();
     }
     public List<LoanPortalAudit> getAuditHistory(Long loanPortalId) {
         return auditRepository.findByLoanPortalId(loanPortalId);

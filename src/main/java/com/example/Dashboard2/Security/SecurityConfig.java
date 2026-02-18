@@ -41,7 +41,7 @@ public class SecurityConfig {
                                 ,"/api/utility-subscription/**","/api/utility-frequency/**","/api/tenant_link_shop/**","/api/edit_requests/**","/api/inventory/**"
                                 ,"/api/data_correction/**","/api/data_correction/monitoring/{tableName}/{dataId}","/api/vendor_carry_forward/**","/api/tools_tracker_stock_management/**"
                         ,"/api/closed_po_records/**","/api/tools_item_name/**","/api/tools_tracker_management/**","/api/tools_brand/**","/api/tools_item_id/**"
-                        ,"/api/tools_tracker_management/**").permitAll()
+                        ,"/api/tools_tracker_management/**","/api/tools-machine-status/**","/api/tools_machine_number/**","/api/branch/**").permitAll()
                         .anyRequest().authenticated()
                 );
         return http.build();

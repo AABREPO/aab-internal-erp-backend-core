@@ -25,8 +25,8 @@ public class ToolsTrackerItemNameTable {
     private String brandId;
     @JsonProperty("model")
     private String model;
-    @JsonProperty("machine_number")
-    private String machineNumber;
+    @JsonProperty("machine_number_id")
+    private String machineNumberId;
     @JsonProperty("quantity")
     private int quantity;
     @JsonProperty("machine_status")

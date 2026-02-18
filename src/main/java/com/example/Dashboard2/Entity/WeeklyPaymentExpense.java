@@ -60,5 +60,7 @@ public class WeeklyPaymentExpense {
     private boolean sendToExpensesEntry;
     @JsonProperty("bill_copy_url")
     private String billCopyUrl;
+    @JsonProperty("branch_id")
+    private Long branchId;
 
 }

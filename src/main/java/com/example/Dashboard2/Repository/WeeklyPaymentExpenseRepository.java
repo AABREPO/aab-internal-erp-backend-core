@@ -28,15 +28,32 @@ public interface WeeklyPaymentExpenseRepository extends JpaRepository<WeeklyPaym
             @Param("weekNumber") Integer weekNumber,
             @Param("type") String type
     );
+    @Query("SELECT w FROM WeeklyPaymentExpense w " +
+            "WHERE w.date = :date AND w.weeklyNumber = :weekNumber AND w.type = :type AND w.branchId = :branchId")
+    List<WeeklyPaymentExpense> findByDateAndWeeklyNumberAndTypeAndBranchId(
+            @Param("date") LocalDate date,
+            @Param("weekNumber") Integer weekNumber,
+            @Param("type") String type,
+            @Param("branchId") Long branchId
+    );
 
     List<WeeklyPaymentExpense> findByWeeklyNumber(Integer weeklyNumber);
+
+    List<WeeklyPaymentExpense> findByWeeklyNumberAndBranchId(Integer weeklyNumber, Long branchId);
+
+    List<WeeklyPaymentExpense> findByBranchId(Long branchId);
 
     // WeeklyPaymentExpenseRepository.java
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM WeeklyPaymentExpense e WHERE e.weeklyNumber = :weekNumber")
     Double getTotalExpenseByWeek(@Param("weekNumber") Integer weekNumber);
 
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM WeeklyPaymentExpense e WHERE e.weeklyNumber = :weekNumber AND e.branchId = :branchId")
+    Double getTotalExpenseByWeekAndBranch(@Param("weekNumber") Integer weekNumber, @Param("branchId") Long branchId);
+
     @Modifying
     @Transactional
-    @Query("UPDATE WeeklyPaymentExpense e SET e.status=true, e.periodEndDate = :endDate WHERE e.weeklyNumber = :weekNumber")
-    int closePeriod(@Param("weekNumber") Integer weekNumber, @Param("endDate") LocalDate endDate);
+    @Query("UPDATE WeeklyPaymentExpense e SET e.status=true, e.periodEndDate = :endDate WHERE e.weeklyNumber = :weekNumber AND e.branchId = :branchId")
+    int closePeriod(@Param("weekNumber") Integer weekNumber,
+                    @Param("branchId") Long branchId,
+                    @Param("endDate") LocalDate endDate);
 }

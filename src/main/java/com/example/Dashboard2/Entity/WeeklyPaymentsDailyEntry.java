@@ -52,6 +52,8 @@ public class WeeklyPaymentsDailyEntry {
     private Long staffAdvancePortalId;
     @JsonProperty("send_to_expenses_entry")
     private boolean sendToExpensesEntry = false;
+    @JsonProperty("branch_id")
+    private Long branchId;
 
     public WeeklyPaymentsDailyEntry() {}
 

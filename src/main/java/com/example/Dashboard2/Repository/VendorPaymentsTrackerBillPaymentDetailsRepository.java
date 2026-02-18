@@ -8,4 +8,6 @@ import java.util.List;
 @Repository
 public interface VendorPaymentsTrackerBillPaymentDetailsRepository extends JpaRepository<VendorPaymentsTrackerBillPaymentDetails, Long> {
     List<VendorPaymentsTrackerBillPaymentDetails> findByVendorPaymentsTrackerId(Long vendorPaymentsTrackerId);
+    List<VendorPaymentsTrackerBillPaymentDetails> findByVendorPaymentsTrackerIdAndBranchId(Long vendorPaymentsTrackerId, Long branchId);
+    List<VendorPaymentsTrackerBillPaymentDetails> findByBranchId(Long branchId);
 }

@@ -30,9 +30,15 @@ public class WeeklyPaymentsDailyEntryService {
     public List<WeeklyPaymentsDailyEntry> getAllEntries() {
         return repository.findAll();
     }
+    public List<WeeklyPaymentsDailyEntry> getAllEntriesByBranch(Long branchId) {
+        return repository.findByBranchId(branchId);
+    }
 
     public List<WeeklyPaymentsDailyEntry> getEntriesByDate(LocalDate date) {
         return repository.findByDate(date);
+    }
+    public List<WeeklyPaymentsDailyEntry> getEntriesByDateAndBranch(LocalDate date, Long branchId) {
+        return repository.findByDateAndBranchId(date, branchId);
     }
 
     public WeeklyPaymentsDailyEntry saveEntry(WeeklyPaymentsDailyEntry entry) {
@@ -41,7 +47,7 @@ public class WeeklyPaymentsDailyEntryService {
         }
         WeeklyPaymentsDailyEntry saved = repository.save(entry);
         // 🔹 Recalculate weekly expense after saving
-        weeklyExpenseService.recalculateWeeklyDailyExpense(saved.getWeeklyNumber(), saved.getDate());
+        weeklyExpenseService.recalculateWeeklyDailyExpense(saved.getWeeklyNumber(), saved.getDate(), saved.getBranchId());
         return saved;
     }
 
@@ -51,7 +57,7 @@ public class WeeklyPaymentsDailyEntryService {
 
         repository.deleteById(id);
         // 🔹 Recalculate weekly expense after deletion
-        weeklyExpenseService.recalculateWeeklyDailyExpense(existing.getWeeklyNumber(), existing.getDate());
+        weeklyExpenseService.recalculateWeeklyDailyExpense(existing.getWeeklyNumber(), existing.getDate(), existing.getBranchId());
     }
     public WeeklyPaymentsDailyEntry editDailyExpense(Long id, String username, WeeklyPaymentsDailyEntry updatedDailyEntry){
         WeeklyPaymentsDailyEntry existing = repository.findById(id)
@@ -105,7 +111,7 @@ public class WeeklyPaymentsDailyEntryService {
         }
         WeeklyPaymentsDailyEntry saved = repository.save(existing);
         // 🔹 Recalculate weekly expense after update
-        weeklyExpenseService.recalculateWeeklyDailyExpense(saved.getWeeklyNumber(), saved.getDate());
+        weeklyExpenseService.recalculateWeeklyDailyExpense(saved.getWeeklyNumber(), saved.getDate(), saved.getBranchId());
         return saved;
     }
     public WeeklyPaymentsDailyEntry editDailyExpenses(Long id, String username, WeeklyPaymentsDailyEntry updatedDailyEntry){

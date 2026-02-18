@@ -1,5 +1,6 @@
 package com.example.Dashboard2.Controller;
 
+import com.example.Dashboard2.DTO.EmployeeBasicDetailsDto;
 import com.example.Dashboard2.Entity.EmployeeDetails;
 import com.example.Dashboard2.Service.EmployeeDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ public class EmployeeDetailsController {
     }
     // Get all Site Engineers
     @GetMapping("/site_engineers")
-    public List<EmployeeDetails> getAllSiteEngineers() {
+    public List<EmployeeBasicDetailsDto> getAllSiteEngineers() {
         return employeeDetailsService.getAllSiteEngineers();
     }
 

@@ -43,8 +43,8 @@ public class ToolsItemNameWithOtherDetailsHistory {
     @JsonProperty("old_model")
     private String oldModel;
     
-    @JsonProperty("old_machine_number")
-    private String oldMachineNumber;
+    @JsonProperty("old_machine_number_id")
+    private String oldMachineNumberId;
     
     @JsonProperty("old_tool_status")
     private String oldToolStatus;
@@ -64,8 +64,8 @@ public class ToolsItemNameWithOtherDetailsHistory {
     @JsonProperty("new_model")
     private String newModel;
     
-    @JsonProperty("new_machine_number")
-    private String newMachineNumber;
+    @JsonProperty("new_machine_number_id")
+    private String newMachineNumberId;
     
     @JsonProperty("new_tool_status")
     private String newToolStatus;

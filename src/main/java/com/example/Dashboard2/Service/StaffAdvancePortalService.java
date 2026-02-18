@@ -17,6 +17,7 @@ import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -67,6 +68,7 @@ public class StaffAdvancePortalService {
         loanPortal.setContractorId(0);
         loanPortal.setProjectId(0);
         loanPortal.setTransferProjectId(0);
+        loanPortal.setBranchId(staffAdvance.getBranchId());
         return loanPortal;
     }
 
@@ -99,7 +101,7 @@ public class StaffAdvancePortalService {
                 // Keep the fromPurposeId and toPurposeId that were set (6 and 4/5 based on employee_id/labour_id)
                 saved = repository.save(staffAdvance);
                 // ✅ trigger recalculation after save
-                paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
+                paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo(), saved.getDate(), saved.getBranchId());
                 return saved;
             }
             
@@ -122,6 +124,7 @@ public class StaffAdvancePortalService {
                 fromEntry.setStaffPaymentMode(staffAdvance.getStaffPaymentMode());
                 fromEntry.setDescription(staffAdvance.getDescription());
                 fromEntry.setStaffRefundAmount(0);
+                fromEntry.setBranchId(staffAdvance.getBranchId());
                 
                 saved = repository.save(fromEntry);
 
@@ -149,6 +152,7 @@ public class StaffAdvancePortalService {
                 fromEntry.setStaffPaymentMode(staffAdvance.getStaffPaymentMode());
                 fromEntry.setDescription(staffAdvance.getDescription());
                 fromEntry.setStaffRefundAmount(0);
+                fromEntry.setBranchId(staffAdvance.getBranchId());
 
                 StaffAdvancePortal toEntry = new StaffAdvancePortal();
                 toEntry.setEntryNo(staffAdvance.getEntryNo());
@@ -164,6 +168,7 @@ public class StaffAdvancePortalService {
                 toEntry.setStaffPaymentMode(staffAdvance.getStaffPaymentMode());
                 toEntry.setDescription(staffAdvance.getDescription());
                 toEntry.setStaffRefundAmount(0);
+                toEntry.setBranchId(staffAdvance.getBranchId());
 
                 repository.save(fromEntry);
                 repository.save(toEntry);
@@ -176,7 +181,7 @@ public class StaffAdvancePortalService {
         }
 
         // ✅ trigger recalculation after save
-        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo(), saved.getDate());
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo(), saved.getDate(), saved.getBranchId());
 
         return saved;
     }
@@ -188,6 +193,11 @@ public class StaffAdvancePortalService {
             throw new EntityNotFoundException("Staff advance not found with id: " + id);
         }
         StaffAdvancePortal existingAdvance = optionalAdvance.get();
+        if (updatedAdvance.getBranchId() == null) {
+            updatedAdvance.setBranchId(existingAdvance.getBranchId());
+        } else if (!Objects.equals(existingAdvance.getBranchId(), updatedAdvance.getBranchId())) {
+            throw new IllegalArgumentException("Branch ID cannot be changed for an existing staff advance entry.");
+        }
 
         // --- AUDIT RECORD ---
         StaffAdvancePortalAudit audit = new StaffAdvancePortalAudit();
@@ -247,6 +257,7 @@ public class StaffAdvancePortalService {
             existingAdvance.setDescription(updatedAdvance.getDescription());
             existingAdvance.setFileUrl(updatedAdvance.getFileUrl());
             existingAdvance.setTimestamp(LocalDateTime.now());
+            existingAdvance.setBranchId(updatedAdvance.getBranchId());
             repository.save(existingAdvance);
 
             StaffAdvancePortal toEntry = new StaffAdvancePortal();
@@ -264,6 +275,7 @@ public class StaffAdvancePortalService {
             toEntry.setStaffRefundAmount(0);
             toEntry.setFileUrl(updatedAdvance.getFileUrl());
             toEntry.setTimestamp(LocalDateTime.now());
+            toEntry.setBranchId(updatedAdvance.getBranchId());
             repository.save(toEntry);
 
             resultEntries.add(existingAdvance);
@@ -293,6 +305,7 @@ public class StaffAdvancePortalService {
                 toKeep.setDescription(updatedAdvance.getDescription());
                 toKeep.setFileUrl(updatedAdvance.getFileUrl());
                 toKeep.setTimestamp(LocalDateTime.now());
+                toKeep.setBranchId(updatedAdvance.getBranchId());
                 repository.save(toKeep);
 
                 repository.delete(toDelete);
@@ -318,6 +331,7 @@ public class StaffAdvancePortalService {
                     entry.setStaffRefundAmount(0);
                     entry.setDescription(updatedAdvance.getDescription());
                     entry.setFileUrl(updatedAdvance.getFileUrl());
+                    entry.setBranchId(updatedAdvance.getBranchId());
                     repository.save(entry);
                     resultEntries.add(entry);
                 } else { // TO entry
@@ -333,6 +347,7 @@ public class StaffAdvancePortalService {
                     entry.setStaffRefundAmount(0);
                     entry.setDescription(updatedAdvance.getDescription());
                     entry.setFileUrl(updatedAdvance.getFileUrl());
+                    entry.setBranchId(updatedAdvance.getBranchId());
                     repository.save(entry);
                     resultEntries.add(entry);
                 }
@@ -354,42 +369,57 @@ public class StaffAdvancePortalService {
             existingAdvance.setDescription(updatedAdvance.getDescription());
             existingAdvance.setFileUrl(updatedAdvance.getFileUrl());
             existingAdvance.setTimestamp(LocalDateTime.now());
+            existingAdvance.setBranchId(updatedAdvance.getBranchId());
             repository.save(existingAdvance);
             resultEntries.add(existingAdvance);
         }
 
         // ✅ trigger recalculation once, for whichever branch was executed
-        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(updatedWeekNo, updatedAdvance.getDate());
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(updatedWeekNo, updatedAdvance.getDate(), updatedAdvance.getBranchId());
 
         return resultEntries;
     }
 
-    public List<StaffAdvancePortal> getAll() {
-        return repository.findAll();
+    public List<StaffAdvancePortal> getAll(Long branchId) {
+        return branchId != null ? repository.findByBranchId(branchId) : repository.findAll();
     }
 
-    public List<StaffAdvancePortal> getByEmployeeId(int employeeId) {
-        return repository.findByEmployeeId(employeeId);
+    public List<StaffAdvancePortal> getByEmployeeId(int employeeId, Long branchId) {
+        return branchId != null
+                ? repository.findByEmployeeIdAndBranchId(employeeId, branchId)
+                : repository.findByEmployeeId(employeeId);
     }
 
-    public List<StaffAdvancePortal> getByType(String type) {
-        return repository.findByType(type);
+    public List<StaffAdvancePortal> getByType(String type, Long branchId) {
+        return branchId != null
+                ? repository.findByTypeAndBranchId(type, branchId)
+                : repository.findByType(type);
     }
 
-    public List<StaffAdvancePortal> getByEmployeeIdAndType(int employeeId, String type) {
-        return repository.findByEmployeeIdAndType(employeeId, type);
+    public List<StaffAdvancePortal> getByEmployeeIdAndType(int employeeId, String type, Long branchId) {
+        return branchId != null
+                ? repository.findByEmployeeIdAndTypeAndBranchId(employeeId, type, branchId)
+                : repository.findByEmployeeIdAndType(employeeId, type);
     }
 
-    public List<StaffAdvancePortal> getByWeekNo(int weekNo) {
-        return repository.findByWeekNo(weekNo);
+    public List<StaffAdvancePortal> getByWeekNo(int weekNo, Long branchId) {
+        return branchId != null
+                ? repository.findByWeekNoAndBranchId(weekNo, branchId)
+                : repository.findByWeekNo(weekNo);
     }
 
-    public List<StaffAdvancePortal> getByEmployeeIdAndWeekNo(int employeeId, int weekNo) {
-        return repository.findByEmployeeIdAndWeekNo(employeeId, weekNo);
+    public List<StaffAdvancePortal> getByEmployeeIdAndWeekNo(int employeeId, int weekNo, Long branchId) {
+        return branchId != null
+                ? repository.findByEmployeeIdAndWeekNoAndBranchId(employeeId, weekNo, branchId)
+                : repository.findByEmployeeIdAndWeekNo(employeeId, weekNo);
     }
 
-    public Optional<StaffAdvancePortal> getById(Long id) {
-        return repository.findById(id);
+    public Optional<StaffAdvancePortal> getById(Long id, Long branchId) {
+        Optional<StaffAdvancePortal> staffAdvance = repository.findById(id);
+        if (branchId == null) {
+            return staffAdvance;
+        }
+        return staffAdvance.filter(p -> Objects.equals(p.getBranchId(), branchId));
     }
 
     public void deleteById(Long id) {
@@ -402,7 +432,7 @@ public class StaffAdvancePortalService {
         int weekNumber = existing.getWeekNo();
         repository.deleteById(id);
         // ✅ trigger recalculation after delete
-        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(weekNumber, existing.getDate());
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(weekNumber, existing.getDate(), existing.getBranchId());
     }
 
     public List<StaffAdvancePortalAudit> getAuditHistory(Long staffAdvancePortalId) {

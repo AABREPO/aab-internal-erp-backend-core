@@ -41,10 +41,6 @@ public class ToolsTrackerItemStockManagementService {
         return toolsTrackerItemStockManagementRepository.findByBrandNameId(brandNameId);
     }
 
-    public List<ToolsTrackerItemStockManagement> getByMachineNumber(String machineNumber) {
-        return toolsTrackerItemStockManagementRepository.findByMachineNumber(machineNumber);
-    }
-
     public List<ToolsTrackerItemStockManagement> getByToolStatus(String toolStatus) {
         return toolsTrackerItemStockManagementRepository.findByToolStatus(toolStatus);
     }
@@ -68,8 +64,8 @@ public class ToolsTrackerItemStockManagementService {
                     if (updated.getModel() != null) {
                         existing.setModel(updated.getModel());
                     }
-                    if (updated.getMachineNumber() != null) {
-                        existing.setMachineNumber(updated.getMachineNumber());
+                    if (updated.getMachineNumberId() != null) {
+                        existing.setMachineNumberId(updated.getMachineNumberId());
                     }
                     if (updated.getPurchaseStoreId() != null) {
                         existing.setPurchaseStoreId(updated.getPurchaseStoreId());
@@ -113,7 +109,7 @@ public class ToolsTrackerItemStockManagementService {
         history.setOldBrandNameId(existing.getBrandNameId());
         history.setOldItemIdsId(existing.getItemIdsId());
         history.setOldModel(existing.getModel());
-        history.setOldMachineNumber(existing.getMachineNumber());
+        history.setOldMachineNumberId(existing.getMachineNumberId());
         history.setOldPurchaseStoreId(existing.getPurchaseStoreId());
         history.setOldPurchaseDate(existing.getPurchaseDate());
         history.setOldWarrantyDate(existing.getWarrantyDate());
@@ -128,7 +124,7 @@ public class ToolsTrackerItemStockManagementService {
         history.setNewBrandNameId(updated.getBrandNameId() != null ? updated.getBrandNameId() : existing.getBrandNameId());
         history.setNewItemIdsId(updated.getItemIdsId() != null ? updated.getItemIdsId() : existing.getItemIdsId());
         history.setNewModel(updated.getModel() != null ? updated.getModel() : existing.getModel());
-        history.setNewMachineNumber(updated.getMachineNumber() != null ? updated.getMachineNumber() : existing.getMachineNumber());
+        history.setNewMachineNumberId(updated.getMachineNumberId() != null ? updated.getMachineNumberId() : existing.getMachineNumberId());
         history.setNewPurchaseStoreId(updated.getPurchaseStoreId() != null ? updated.getPurchaseStoreId() : existing.getPurchaseStoreId());
         history.setNewPurchaseDate(updated.getPurchaseDate() != null ? updated.getPurchaseDate() : existing.getPurchaseDate());
         history.setNewWarrantyDate(updated.getWarrantyDate() != null ? updated.getWarrantyDate() : existing.getWarrantyDate());

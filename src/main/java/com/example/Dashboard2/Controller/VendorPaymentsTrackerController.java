@@ -34,13 +34,14 @@ public class VendorPaymentsTrackerController {
     }
     // Get all trackers
     @GetMapping("/trackers")
-    public List<VendorPaymentsTracker> getAllTrackers() {
-        return service.getAllTrackers();
+    public List<VendorPaymentsTracker> getAllTrackers(@RequestParam(required = false) Long branchId) {
+        return service.getAllTrackers(branchId);
     }
     // Get tracker by id (with bills)
     @GetMapping("/tracker/{id}")
-    public VendorPaymentsTracker getTracker(@PathVariable Long id) {
-        return service.getTracker(id);
+    public VendorPaymentsTracker getTracker(@PathVariable Long id,
+                                            @RequestParam(required = false) Long branchId) {
+        return service.getTracker(id, branchId);
     }
     @PutMapping("/tracker/{trackerId}/reset-verification")
     public void resetBills(@PathVariable Long trackerId) {
@@ -83,10 +84,14 @@ public class VendorPaymentsTrackerController {
         return service.updatedAdjustmentAmount(trackerId, adjustmentAmount);
     }
     @PutMapping("/tracker/{trackerId}/update-details")
-    public VendorPaymentsTracker updateTrackerDetails(
+    public ResponseEntity<VendorPaymentsTracker> updateTrackerDetails(
             @PathVariable Long trackerId,
             @RequestBody VendorPaymentsTracker updatedTracker) {
-        return service.updateTrackerDetails(trackerId, updatedTracker);
+        try {
+            return ResponseEntity.ok(service.updateTrackerDetails(trackerId, updatedTracker));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
     @PutMapping("/bills/{billId}/pdf-url")
     public ResponseEntity<VendorPaymentsTracker> updatePdfUrl(
@@ -103,13 +108,13 @@ public class VendorPaymentsTrackerController {
     }
     // Get all fully paid trackers with all related data
     @GetMapping("/trackers/fully-paid/all-data")
-    public List<java.util.Map<String, Object>> getFullyPaidTrackerData() {
-        return service.getFullyPaidTrackerData();
+    public List<java.util.Map<String, Object>> getFullyPaidTrackerData(@RequestParam(required = false) Long branchId) {
+        return service.getFullyPaidTrackerData(branchId);
     }
     // Get all fully paid AND verified trackers with all related data
     @GetMapping("/trackers/fully-paid-verified/all-data")
-    public List<java.util.Map<String, Object>> getFullyPaidAndVerifiedTrackerData() {
-        return service.getFullyPaidAndVerifiedTrackerData();
+    public List<java.util.Map<String, Object>> getFullyPaidAndVerifiedTrackerData(@RequestParam(required = false) Long branchId) {
+        return service.getFullyPaidAndVerifiedTrackerData(branchId);
     }
     // Delete a bill verification record
     @DeleteMapping("/bill-verification/{billId}")

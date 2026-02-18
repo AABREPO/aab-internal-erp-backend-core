@@ -30,12 +30,21 @@ ORDER BY MAX(w.id) ASC
     Integer findLastClosedWeekNumber();
 
     List<WeeklyPaymentsReceived> findByWeeklyNumber(Integer weeklyNumber);
+    List<WeeklyPaymentsReceived> findByWeeklyNumberAndBranchId(Integer weeklyNumber, Long branchId);
+    List<WeeklyPaymentsReceived> findByBranchId(Long branchId);
 
     @Query("SELECT w FROM WeeklyPaymentsReceived w " +
             "WHERE w.date = :date AND w.weeklyNumber = :weeklyNumber AND w.type = :type")
     WeeklyPaymentsReceived findByWeeklyNumberAndDateAndType(@Param("date") LocalDate date,
                                                             @Param("weeklyNumber") Integer weeklyNumber,
                                                             @Param("type") String type);
+
+    @Query("SELECT w FROM WeeklyPaymentsReceived w " +
+            "WHERE w.date = :date AND w.weeklyNumber = :weeklyNumber AND w.type = :type AND w.branchId = :branchId")
+    List<WeeklyPaymentsReceived> findByWeeklyNumberAndDateAndTypeAndBranchId(@Param("date") LocalDate date,
+                                                                              @Param("weeklyNumber") Integer weeklyNumber,
+                                                                              @Param("type") String type,
+                                                                              @Param("branchId") Long branchId);
 
     // WeeklyPaymentsReceivedRepository.java
     @Query("SELECT COALESCE(SUM(p.amount), 0) " +
@@ -44,11 +53,23 @@ ORDER BY MAX(w.id) ASC
             "AND LOWER(p.type) <> 'handover'")
     Double getTotalPaymentsByWeek(@Param("weekNumber") Integer weekNumber);
 
+    @Query("SELECT COALESCE(SUM(p.amount), 0) " +
+            "FROM WeeklyPaymentsReceived p " +
+            "WHERE p.weeklyNumber = :weekNumber " +
+            "AND p.branchId = :branchId " +
+            "AND LOWER(p.type) <> 'handover'")
+    Double getTotalPaymentsByWeekAndBranch(@Param("weekNumber") Integer weekNumber, @Param("branchId") Long branchId);
+
     @Query("SELECT p FROM WeeklyPaymentsReceived p WHERE p.weeklyNumber = :weekNumber AND p.type = 'Carry (CF)'")
     WeeklyPaymentsReceived findCarryForwardRow(@Param("weekNumber") Integer weekNumber);
 
+    @Query("SELECT p FROM WeeklyPaymentsReceived p WHERE p.weeklyNumber = :weekNumber AND p.branchId = :branchId AND p.type = 'Carry (CF)'")
+    WeeklyPaymentsReceived findCarryForwardRowByWeekAndBranch(@Param("weekNumber") Integer weekNumber, @Param("branchId") Long branchId);
+
     @Modifying
     @Transactional
-    @Query("UPDATE WeeklyPaymentsReceived p SET p.status=true, p.periodEndDate = :endDate WHERE p.weeklyNumber = :weekNumber")
-    int closePeriod(@Param("weekNumber") Integer weekNumber, @Param("endDate") LocalDate endDate);
+    @Query("UPDATE WeeklyPaymentsReceived p SET p.status=true, p.periodEndDate = :endDate WHERE p.weeklyNumber = :weekNumber AND p.branchId = :branchId")
+    int closePeriod(@Param("weekNumber") Integer weekNumber,
+                    @Param("branchId") Long branchId,
+                    @Param("endDate") LocalDate endDate);
 }

@@ -32,6 +32,8 @@ public class WeeklyPaymentsReceived {
     private LocalDate periodEndDate;
     @JsonProperty("discount_amount")
     private double discountAmount;
+    @JsonProperty("branch_id")
+    private Long branchId;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -74,5 +76,13 @@ public class WeeklyPaymentsReceived {
 
     public void setDiscountAmount(double discountAmount) {
         this.discountAmount = discountAmount;
+    }
+
+    public Long getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(Long branchId) {
+        this.branchId = branchId;
     }
 }

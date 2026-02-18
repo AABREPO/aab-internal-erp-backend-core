@@ -26,14 +26,20 @@ public class WeeklyPaymentsDailyEntryController {
         return ResponseEntity.ok(saved);
     }
     @GetMapping("/date/{date}")
-    public ResponseEntity<List<WeeklyPaymentsDailyEntry>> getEntriesByDate(@PathVariable String date) {
+    public ResponseEntity<List<WeeklyPaymentsDailyEntry>> getEntriesByDate(
+            @PathVariable String date,
+            @RequestParam(required = false) Long branchId) {
         LocalDate localDate = LocalDate.parse(date);
-        List<WeeklyPaymentsDailyEntry> entries = service.getEntriesByDate(localDate);
+        List<WeeklyPaymentsDailyEntry> entries = branchId != null
+                ? service.getEntriesByDateAndBranch(localDate, branchId)
+                : service.getEntriesByDate(localDate);
         return ResponseEntity.ok(entries);
     }
     @GetMapping("/getAll")
-    public ResponseEntity<List<WeeklyPaymentsDailyEntry>> getAllEntries(){
-        List<WeeklyPaymentsDailyEntry> dailyEntries = service.getAllEntries();
+    public ResponseEntity<List<WeeklyPaymentsDailyEntry>> getAllEntries(@RequestParam(required = false) Long branchId){
+        List<WeeklyPaymentsDailyEntry> dailyEntries = branchId != null
+                ? service.getAllEntriesByBranch(branchId)
+                : service.getAllEntries();
         return ResponseEntity.ok().body(dailyEntries);
     }
 

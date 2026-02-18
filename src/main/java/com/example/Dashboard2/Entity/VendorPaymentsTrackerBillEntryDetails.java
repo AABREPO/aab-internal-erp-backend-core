@@ -27,6 +27,9 @@ public class VendorPaymentsTrackerBillEntryDetails {
     @JsonProperty("entered_date")
     private String EnteredDate;
 
+    @JsonProperty("branch_id")
+    private Long branchId;
+
     public Long getId() {
         return id;
     }
@@ -65,5 +68,13 @@ public class VendorPaymentsTrackerBillEntryDetails {
 
     public void setEnteredDate(String enteredDate) {
         EnteredDate = enteredDate;
+    }
+
+    public Long getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(Long branchId) {
+        this.branchId = branchId;
     }
 }

@@ -45,8 +45,14 @@ public class WeeklyPaymentsReceivedService {
     public List<WeeklyPaymentsReceived> getAllWeeklyPaymentsReceived(){
         return repo.findAll();
     }
+    public List<WeeklyPaymentsReceived> getAllWeeklyPaymentsReceivedByBranch(Long branchId){
+        return repo.findByBranchId(branchId);
+    }
     public List<WeeklyPaymentsReceived> getPaymentsByWeek(Integer weekNumber) {
         return repo.findByWeeklyNumber(weekNumber);
+    }
+    public List<WeeklyPaymentsReceived> getPaymentsByWeekAndBranch(Integer weekNumber, Long branchId) {
+        return repo.findByWeeklyNumberAndBranchId(weekNumber, branchId);
     }
     public WeeklyPaymentsReceived savePayment(WeeklyPaymentsReceived payment) {
         Integer currentWeek = repo.findMaxWeeklyNumber();
@@ -66,8 +72,8 @@ public class WeeklyPaymentsReceivedService {
         return repo.save(payment);
     }
     @Transactional
-    public void closeCurrentPeriod(Integer weekNumber) {
-        repo.closePeriod(weekNumber, LocalDate.now());
+    public void closeCurrentPeriod(Integer weekNumber, Long branchId) {
+        repo.closePeriod(weekNumber, branchId, LocalDate.now());
     }
     public WeeklyPaymentsReceived editPayment(Long id,String username, WeeklyPaymentsReceived updatedPayment) {
         WeeklyPaymentsReceived existing = repo.findById(id)
@@ -120,7 +126,7 @@ public class WeeklyPaymentsReceivedService {
         WeeklyPaymentsReceived saved = repo.save(existing);
         // ✅ Only update Carry Forward if status is true
         if (saved.isStatus()) {
-            updateCarryForwardBalance(saved.getWeeklyNumber());
+            updateCarryForwardBalance(saved.getWeeklyNumber(), saved.getBranchId());
         }
         return saved;
     }
@@ -129,8 +135,11 @@ public class WeeklyPaymentsReceivedService {
     }
     // WeeklyPaymentsReceivedService.java
     public WeeklyPaymentsReceived savePaymentReceivedForSameWeeklyNumber(WeeklyPaymentsReceived weeklyPaymentsReceived){
+        if (weeklyPaymentsReceived.getCreatedAt() == null) {
+            weeklyPaymentsReceived.setCreatedAt(LocalDateTime.now());
+        }
         WeeklyPaymentsReceived saved = repo.save(weeklyPaymentsReceived);
-        updateCarryForwardBalance(weeklyPaymentsReceived.getWeeklyNumber());
+        updateCarryForwardBalance(saved.getWeeklyNumber(), saved.getBranchId());
         return saved;
     }
     public void deleteWeeklyPaymentsReceived(Long id) {
@@ -141,14 +150,21 @@ public class WeeklyPaymentsReceivedService {
         repo.deleteById(id);
         // only if status is true → update balance
         if (Boolean.TRUE.equals(payment.isStatus())) {
-            updateCarryForwardBalance(weekNumber);
+            updateCarryForwardBalance(weekNumber, payment.getBranchId());
         }
     }
-    private void updateCarryForwardBalance(Integer weekNumber) {
-        Double totalExpenses = expenseRepo.getTotalExpenseByWeek(weekNumber);
-        Double totalPayments = repo.getTotalPaymentsByWeek(weekNumber);
+
+    private void updateCarryForwardBalance(Integer weekNumber, Long branchId) {
+        Double totalExpenses = branchId != null
+                ? expenseRepo.getTotalExpenseByWeekAndBranch(weekNumber, branchId)
+                : expenseRepo.getTotalExpenseByWeek(weekNumber);
+        Double totalPayments = branchId != null
+                ? repo.getTotalPaymentsByWeekAndBranch(weekNumber, branchId)
+                : repo.getTotalPaymentsByWeek(weekNumber);
         double balance = (totalPayments != null ? totalPayments : 0) - (totalExpenses != null ? totalExpenses : 0);
-        WeeklyPaymentsReceived carryForwardRow = repo.findCarryForwardRow(weekNumber + 1);
+        WeeklyPaymentsReceived carryForwardRow = branchId != null
+                ? repo.findCarryForwardRowByWeekAndBranch(weekNumber + 1, branchId)
+                : repo.findCarryForwardRow(weekNumber + 1);
         if (carryForwardRow != null) {
             Double discount = carryForwardRow.getDiscountAmount();
             if (discount != null) {
@@ -158,107 +174,134 @@ public class WeeklyPaymentsReceivedService {
             repo.save(carryForwardRow);
         }
     }
-    public void recalculateWeeklyRefundPayment(Integer weeklyNumber, LocalDate date) {
-        // ✅ Sum of amount + extra_amount from daily entries
-        Double totalDailyExpenses = refundReceivedRepository.sumAmountByWeekAndDate(weeklyNumber, date);
-        if (totalDailyExpenses == null) {
-            totalDailyExpenses = 0.0;
+    public void recalculateWeeklyRefundPayment(Integer weeklyNumber, LocalDate date, Long branchId) {
+        // ✅ Sum for refund entries scoped to branch
+        Double totalRefundAmount = refundReceivedRepository.sumAmountByWeekAndDateAndBranch(weeklyNumber, date, branchId);
+        if (totalRefundAmount == null) {
+            totalRefundAmount = 0.0;
         }
-        // ✅ Find existing weekly expense row
-        WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
-                date, weeklyNumber, "Wage Refund"
+        // ✅ Find existing weekly payment rows by branch
+        List<WeeklyPaymentsReceived> existingList = repo.findByWeeklyNumberAndDateAndTypeAndBranchId(
+                date, weeklyNumber, "Wage Refund", branchId
         );
-        if (existing != null) {
-            // Update amount only
-            existing.setAmount(totalDailyExpenses);
+        if (!existingList.isEmpty()) {
+            WeeklyPaymentsReceived existing = existingList.get(0);
+            existing.setAmount(totalRefundAmount);
             repo.save(existing);
+            if (existingList.size() > 1) {
+                for (int i = 1; i < existingList.size(); i++) {
+                    repo.delete(existingList.get(i));
+                }
+            }
         } else {
-            // ✅ Create new row with contractorId & projectId
-            WeeklyPaymentsReceived newExpense = new WeeklyPaymentsReceived();
-            newExpense.setDate(date);
-            newExpense.setWeeklyNumber(weeklyNumber);
-            newExpense.setType("Wage Refund");
-            newExpense.setAmount(totalDailyExpenses);
-            newExpense.setCreatedAt(LocalDateTime.now());
-            // 🔹 Hardcode contractor & project
-            newExpense.setStatus(false);
-            newExpense.setPeriodStartDate(LocalDate.now());
-            repo.save(newExpense);
+            WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
+            newRefund.setDate(date);
+            newRefund.setWeeklyNumber(weeklyNumber);
+            newRefund.setType("Wage Refund");
+            newRefund.setAmount(totalRefundAmount);
+            newRefund.setCreatedAt(LocalDateTime.now());
+            newRefund.setBranchId(branchId);
+            newRefund.setStatus(false);
+            newRefund.setPeriodStartDate(LocalDate.now());
+            repo.save(newRefund);
         }
     }
-    public void recalculateWeeklyAdvanceRefundPayment(int weekNumber, String date) {
-        String today = LocalDate.now().toString(); // yyyy-MM-dd format
-        Double totalRefunds = advancePortalRepository.sumRefundsByWeekDateAndMode(
-                weekNumber, date, "Refund", "Cash"
+    public void recalculateWeeklyAdvanceRefundPayment(int weekNumber, String date, Long branchId) {
+        Double totalRefunds = advancePortalRepository.sumRefundsByWeekDateAndModeAndBranch(
+                weekNumber, date, "Refund", "Cash", branchId
         );
-        if (totalRefunds != null && totalRefunds > 0) {
-            WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
-                    LocalDate.parse(date), weekNumber, "Project Advance Refund"
-            );
-            if (existing != null) {
-                existing.setAmount(totalRefunds);
-                repo.save(existing);
-            } else {
-                WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
-                newRefund.setDate(LocalDate.now());
-                newRefund.setWeeklyNumber(weekNumber);
-                newRefund.setType("Project Advance Refund");
-                newRefund.setAmount(totalRefunds);
-                newRefund.setCreatedAt(LocalDateTime.now());
-                newRefund.setStatus(false);
-                newRefund.setPeriodStartDate(LocalDate.now());
-                repo.save(newRefund);
+        if (totalRefunds == null) {
+            totalRefunds = 0.0;
+        }
+        List<WeeklyPaymentsReceived> existingList = repo.findByWeeklyNumberAndDateAndTypeAndBranchId(
+                LocalDate.parse(date), weekNumber, "Project Advance Refund", branchId
+        );
+        if (!existingList.isEmpty()) {
+            WeeklyPaymentsReceived existing = existingList.get(0);
+            existing.setAmount(totalRefunds);
+            repo.save(existing);
+            if (existingList.size() > 1) {
+                for (int i = 1; i < existingList.size(); i++) {
+                    repo.delete(existingList.get(i));
+                }
             }
+        } else if (totalRefunds > 0) {
+            WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
+            newRefund.setDate(LocalDate.parse(date));
+            newRefund.setWeeklyNumber(weekNumber);
+            newRefund.setType("Project Advance Refund");
+            newRefund.setAmount(totalRefunds);
+            newRefund.setCreatedAt(LocalDateTime.now());
+            newRefund.setBranchId(branchId);
+            newRefund.setStatus(false);
+            newRefund.setPeriodStartDate(LocalDate.now());
+            repo.save(newRefund);
         }
     }
-    public void recalculateWeeklyStaffAdvanceRefundPayment(int weekNumber, String date) {
-        String today = LocalDate.now().toString(); // yyyy-MM-dd format
-        Double totalRefunds = staffAdvancePortalRepository.sumRefundsByWeekDateAndMode(
-                weekNumber, date, "Refund", "Cash"
+
+    public void recalculateWeeklyStaffAdvanceRefundPayment(int weekNumber, String date, Long branchId) {
+        Double totalRefunds = staffAdvancePortalRepository.sumRefundsByWeekDateAndModeAndBranch(
+                weekNumber, date, "Refund", "Cash", branchId
         );
-        if (totalRefunds != null && totalRefunds > 0) {
-            WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
-                    LocalDate.parse(date), weekNumber, "Staff Advance Refund"
-            );
-            if (existing != null) {
-                existing.setAmount(totalRefunds);
-                repo.save(existing);
-            } else {
-                WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
-                newRefund.setDate(LocalDate.now());
-                newRefund.setWeeklyNumber(weekNumber);
-                newRefund.setType("Staff Advance Refund");
-                newRefund.setAmount(totalRefunds);
-                newRefund.setCreatedAt(LocalDateTime.now());
-                newRefund.setStatus(false);
-                newRefund.setPeriodStartDate(LocalDate.now());
-                repo.save(newRefund);
+        if (totalRefunds == null) {
+            totalRefunds = 0.0;
+        }
+        List<WeeklyPaymentsReceived> existingList = repo.findByWeeklyNumberAndDateAndTypeAndBranchId(
+                LocalDate.parse(date), weekNumber, "Staff Advance Refund", branchId
+        );
+        if (!existingList.isEmpty()) {
+            WeeklyPaymentsReceived existing = existingList.get(0);
+            existing.setAmount(totalRefunds);
+            repo.save(existing);
+            if (existingList.size() > 1) {
+                for (int i = 1; i < existingList.size(); i++) {
+                    repo.delete(existingList.get(i));
+                }
             }
+        } else if (totalRefunds > 0) {
+            WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
+            newRefund.setDate(LocalDate.parse(date));
+            newRefund.setWeeklyNumber(weekNumber);
+            newRefund.setType("Staff Advance Refund");
+            newRefund.setAmount(totalRefunds);
+            newRefund.setCreatedAt(LocalDateTime.now());
+            newRefund.setBranchId(branchId);
+            newRefund.setStatus(false);
+            newRefund.setPeriodStartDate(LocalDate.now());
+            repo.save(newRefund);
         }
     }
-    public void recalculateWeeklyLoanAdvanceRefundPayment(int weekNumber , String date) {
-        String today = LocalDate.now().toString(); // yyyy-MM-dd format
-        Double totalRefunds = loanPortalRepository.sumRefundsByWeekDateAndMode(
-                weekNumber, date, "Refund", "Cash"
+
+    public void recalculateWeeklyLoanAdvanceRefundPayment(int weekNumber , String date, Long branchId) {
+        Double totalRefunds = loanPortalRepository.sumRefundsByWeekDateAndModeAndBranch(
+                weekNumber, date, "Refund", "Cash", branchId
         );
-        if (totalRefunds != null && totalRefunds > 0) {
-            WeeklyPaymentsReceived existing = repo.findByWeeklyNumberAndDateAndType(
-                    LocalDate.parse(date), weekNumber, "Loan Refund"
-            );
-            if (existing != null) {
-                existing.setAmount(totalRefunds);
-                repo.save(existing);
-            } else {
-                WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
-                newRefund.setDate(LocalDate.now());
-                newRefund.setWeeklyNumber(weekNumber);
-                newRefund.setType("Loan Refund");
-                newRefund.setAmount(totalRefunds);
-                newRefund.setCreatedAt(LocalDateTime.now());
-                newRefund.setStatus(false);
-                newRefund.setPeriodStartDate(LocalDate.now());
-                repo.save(newRefund);
+        if (totalRefunds == null) {
+            totalRefunds = 0.0;
+        }
+        List<WeeklyPaymentsReceived> existingList = repo.findByWeeklyNumberAndDateAndTypeAndBranchId(
+                LocalDate.parse(date), weekNumber, "Loan Refund", branchId
+        );
+        if (!existingList.isEmpty()) {
+            WeeklyPaymentsReceived existing = existingList.get(0);
+            existing.setAmount(totalRefunds);
+            repo.save(existing);
+            if (existingList.size() > 1) {
+                for (int i = 1; i < existingList.size(); i++) {
+                    repo.delete(existingList.get(i));
+                }
             }
+        } else if (totalRefunds > 0) {
+            WeeklyPaymentsReceived newRefund = new WeeklyPaymentsReceived();
+            newRefund.setDate(LocalDate.parse(date));
+            newRefund.setWeeklyNumber(weekNumber);
+            newRefund.setType("Loan Refund");
+            newRefund.setAmount(totalRefunds);
+            newRefund.setCreatedAt(LocalDateTime.now());
+            newRefund.setBranchId(branchId);
+            newRefund.setStatus(false);
+            newRefund.setPeriodStartDate(LocalDate.now());
+            repo.save(newRefund);
         }
     }
 }

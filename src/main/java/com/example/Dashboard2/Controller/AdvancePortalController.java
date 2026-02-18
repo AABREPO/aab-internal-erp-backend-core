@@ -18,13 +18,14 @@ public class AdvancePortalController {
     private AdvancePortalService advancePortalService;
 
     @GetMapping("/getAll")
-    public List<AdvancePortal> getAllAdvancePortals() {
-        return advancePortalService.getAllAdvancePortals();
+    public List<AdvancePortal> getAllAdvancePortals(@RequestParam(required = false) Long branchId) {
+        return advancePortalService.getAllAdvancePortals(branchId);
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<AdvancePortal> getAdvancePortalById(@PathVariable Long id) {
-        return advancePortalService.getAdvancePortalById(id)
+    public ResponseEntity<AdvancePortal> getAdvancePortalById(@PathVariable Long id,
+                                                              @RequestParam(required = false) Long branchId) {
+        return advancePortalService.getAdvancePortalById(id, branchId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -45,11 +46,15 @@ public class AdvancePortalController {
             @RequestBody AdvancePortal updatedPortal,
             @RequestParam String editedBy
     ) {
-        AdvancePortal updated = advancePortalService.updateAdvancePortal(id, updatedPortal, editedBy);
-        if (updated != null) {
-            return ResponseEntity.ok(updated);
-        } else {
-            return ResponseEntity.notFound().build();
+        try {
+            AdvancePortal updated = advancePortalService.updateAdvancePortal(id, updatedPortal, editedBy);
+            if (updated != null) {
+                return ResponseEntity.ok(updated);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface VendorPaymentsTrackerBillEntryDetailsRepository extends JpaRepository<VendorPaymentsTrackerBillEntryDetails, Long> {
     List<VendorPaymentsTrackerBillEntryDetails> findByVendorPaymentsTrackerId(Long vendorPaymentsTrackerId);
+    List<VendorPaymentsTrackerBillEntryDetails> findByVendorPaymentsTrackerIdAndBranchId(Long vendorPaymentsTrackerId, Long branchId);
+    List<VendorPaymentsTrackerBillEntryDetails> findByBranchId(Long branchId);
 }

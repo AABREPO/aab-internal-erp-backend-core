@@ -20,12 +20,13 @@ public class LoanPortalController {
         return ResponseEntity.ok(savedLoan);
     }
     @GetMapping("/all")
-    public ResponseEntity<List<LoanPortal>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<List<LoanPortal>> getAll(@RequestParam(required = false) Long branchId) {
+        return ResponseEntity.ok(service.getAll(branchId));
     }
     @GetMapping("/{id}")
-    public ResponseEntity<LoanPortal> getById(@PathVariable Long id) {
-        return service.getById(id)
+    public ResponseEntity<LoanPortal> getById(@PathVariable Long id,
+                                              @RequestParam(required = false) Long branchId) {
+        return service.getById(id, branchId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -40,6 +41,8 @@ public class LoanPortalController {
             return ResponseEntity.ok(updatedLoans);
         } catch (EntityNotFoundException ex) {
             return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
         }
     }
     @GetMapping("/audit/history/{loanPortalId}")

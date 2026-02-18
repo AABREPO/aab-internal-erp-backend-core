@@ -40,6 +40,9 @@ public class VendorPaymentsTracker {
     @JsonProperty("adjustment_amount")
     private double adjustmentAmount;
 
+    @JsonProperty("branch_id")
+    private Long branchId;
+
     @OneToMany(mappedBy = "vendorPaymentsTracker", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<VendorPaymentsTrackerBillVerification> billVerifications;
@@ -143,5 +146,13 @@ public class VendorPaymentsTracker {
 
     public void setOverAllPaymentPdfUrl(String overAllPaymentPdfUrl) {
         this.overAllPaymentPdfUrl = overAllPaymentPdfUrl;
+    }
+
+    public Long getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(Long branchId) {
+        this.branchId = branchId;
     }
 }

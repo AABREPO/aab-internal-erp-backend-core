@@ -69,6 +69,8 @@ public class WeeklyPaymentBillDataList {
     private String accountNumber;
     @JsonProperty("vendor_payment_tracker_id")
     private String vendorPaymentTrackerId;
+    @JsonProperty("branch_id")
+    private Long branchId;
 
     public Long getId() {
         return id;
@@ -292,5 +294,13 @@ public class WeeklyPaymentBillDataList {
 
     public void setVendorPaymentTrackerId(String vendorPaymentTrackerId) {
         this.vendorPaymentTrackerId = vendorPaymentTrackerId;
+    }
+
+    public Long getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(Long branchId) {
+        this.branchId = branchId;
     }
 }

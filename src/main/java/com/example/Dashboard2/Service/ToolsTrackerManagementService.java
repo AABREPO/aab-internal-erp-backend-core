@@ -53,8 +53,11 @@ public class ToolsTrackerManagementService {
     public Long getServiceCount(){
         return toolsTrackerManagementRepository.countByToolsEntryTypeAndDeleteStatusFalse("service");
     }
+    public Long getServiceReturnCount(){
+        return toolsTrackerManagementRepository.countByToolsEntryTypeAndDeleteStatusFalse("service_return");
+    }
     public Long getRelocationCount(){
-        return toolsTrackerManagementRepository.countByToolsEntryTypeAndDeleteStatusFalse("relocation");
+        return toolsTrackerManagementRepository.countByToolsEntryTypeAndDeleteStatusFalse("relocate");
     }
     @Transactional
     public ToolsTrackerManagement update(Long id, ToolsTrackerManagement updatedData, String editedBy) {
@@ -149,16 +152,19 @@ public class ToolsTrackerManagementService {
                     history.setOldItemIdsId(existingItem.getItemIdsId());
                     history.setOldBrandId(existingItem.getBrandId());
                     history.setOldModel(existingItem.getModel());
-                    history.setOldMachineNumber(existingItem.getMachineNumber());
+                    history.setOldMachineNumberId(existingItem.getMachineNumberId());
                     history.setOldQuantity(existingItem.getQuantity());
+                    history.setOldHomeLocationId(existingItem.getHomeLocationId());
+                    history.setOldDescription(existingItem.getDescription());
 
                     // New values
                     history.setNewItemNameId(updatedItem.getItemNameId() != null ? updatedItem.getItemNameId() : existingItem.getItemNameId());
                     history.setNewItemIdsId(updatedItem.getItemIdsId() != null ? updatedItem.getItemIdsId() : existingItem.getItemIdsId());
                     history.setNewBrandId(updatedItem.getBrandId() != null ? updatedItem.getBrandId() : existingItem.getBrandId());
                     history.setNewModel(updatedItem.getModel() != null ? updatedItem.getModel() : existingItem.getModel());
-                    history.setNewMachineNumber(updatedItem.getMachineNumber() != null ? updatedItem.getMachineNumber() : existingItem.getMachineNumber());
+                    history.setNewMachineNumberId(updatedItem.getMachineNumberId() != null ? updatedItem.getMachineNumberId() : existingItem.getMachineNumberId());
                     history.setNewQuantity(updatedItem.getQuantity() != 0 ? updatedItem.getQuantity() : existingItem.getQuantity());
+                    history.setOldHomeLocationId(updatedItem.getHomeLocationId());
 
                     toolsTrackerItemNameTableHistoryRepository.save(history);
                 }
@@ -189,8 +195,8 @@ public class ToolsTrackerManagementService {
                             if (updatedItem.getModel() != null) {
                                 existingItem.setModel(updatedItem.getModel());
                             }
-                            if (updatedItem.getMachineNumber() != null) {
-                                existingItem.setMachineNumber(updatedItem.getMachineNumber());
+                            if (updatedItem.getMachineNumberId() != null) {
+                                existingItem.setMachineNumberId(updatedItem.getMachineNumberId());
                             }
                             if (updatedItem.getQuantity() != 0) {
                                 existingItem.setQuantity(updatedItem.getQuantity());

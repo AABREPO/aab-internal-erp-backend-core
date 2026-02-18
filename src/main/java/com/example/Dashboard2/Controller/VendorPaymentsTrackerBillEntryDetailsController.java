@@ -20,21 +20,23 @@ public class VendorPaymentsTrackerBillEntryDetailsController {
         return trackerBillEntryDetailsService.saveVendorPaymentsTrackerBillEntryDetails(vendorPaymentsTrackerBillEntryDetails);
     }
     @GetMapping("/getAll")
-    public List<VendorPaymentsTrackerBillEntryDetails> getAllVendorPaymentsTrackerBillEntryDetails(){
-        return trackerBillEntryDetailsService.getAllVendorPaymentsTrackerBillEntryDetails();
+    public List<VendorPaymentsTrackerBillEntryDetails> getAllVendorPaymentsTrackerBillEntryDetails(@RequestParam(required = false) Long branchId){
+        return trackerBillEntryDetailsService.getAllVendorPaymentsTrackerBillEntryDetails(branchId);
     }
     @GetMapping("/get/{vendorPaymentsTrackerId}")
-    public List<VendorPaymentsTrackerBillEntryDetails> getByVendorPaymentsTrackerBillEntryDetails(@PathVariable Long vendorPaymentsTrackerId){
-        return trackerBillEntryDetailsService.getVendorPaymentsTrackerById(vendorPaymentsTrackerId);
+    public List<VendorPaymentsTrackerBillEntryDetails> getByVendorPaymentsTrackerBillEntryDetails(@PathVariable Long vendorPaymentsTrackerId,
+                                                                                                   @RequestParam(required = false) Long branchId){
+        return trackerBillEntryDetailsService.getVendorPaymentsTrackerById(vendorPaymentsTrackerId, branchId);
     }
     @PutMapping("/update/{id}")
     public VendorPaymentsTrackerBillEntryDetails updateEnteredByAndDate(
             @PathVariable Long id,
-            @RequestBody Map<String, String> updates) {
+            @RequestBody Map<String, String> updates,
+            @RequestParam(required = false) Long branchId) {
 
         String enteredBy = updates.get("enteredBy");
         String enteredDate = updates.get("enteredDate");
 
-        return trackerBillEntryDetailsService.updateEnteredByAndDate(id, enteredBy, enteredDate);
+        return trackerBillEntryDetailsService.updateEnteredByAndDate(id, enteredBy, enteredDate, branchId);
     }
 }

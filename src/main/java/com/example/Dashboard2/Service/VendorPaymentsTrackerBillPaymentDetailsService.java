@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class VendorPaymentsTrackerBillPaymentDetailsService {
@@ -20,16 +21,23 @@ public class VendorPaymentsTrackerBillPaymentDetailsService {
         }
         return trackerBillPaymentDetailsRepository.save(vendorPaymentsTrackerBillPaymentDetails);
     }
-    public List<VendorPaymentsTrackerBillPaymentDetails> getAllVendorPaymentsTrackerBillPaymentDetails(){
-        return trackerBillPaymentDetailsRepository.findAll();
+    public List<VendorPaymentsTrackerBillPaymentDetails> getAllVendorPaymentsTrackerBillPaymentDetails(Long branchId){
+        return branchId != null
+                ? trackerBillPaymentDetailsRepository.findByBranchId(branchId)
+                : trackerBillPaymentDetailsRepository.findAll();
     }
-    public List<VendorPaymentsTrackerBillPaymentDetails> getVendorPaymentsTrackerPaymentById(Long vendorPaymentsTrackerId){
-        return trackerBillPaymentDetailsRepository.findByVendorPaymentsTrackerId(vendorPaymentsTrackerId);
+    public List<VendorPaymentsTrackerBillPaymentDetails> getVendorPaymentsTrackerPaymentById(Long vendorPaymentsTrackerId, Long branchId){
+        return branchId != null
+                ? trackerBillPaymentDetailsRepository.findByVendorPaymentsTrackerIdAndBranchId(vendorPaymentsTrackerId, branchId)
+                : trackerBillPaymentDetailsRepository.findByVendorPaymentsTrackerId(vendorPaymentsTrackerId);
     }
-    public VendorPaymentsTrackerBillPaymentDetails updateBillUrl(Long id , String billUrl){
+    public VendorPaymentsTrackerBillPaymentDetails updateBillUrl(Long id , String billUrl, Long branchId){
         VendorPaymentsTrackerBillPaymentDetails record =
                 trackerBillPaymentDetailsRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Record not found"));
+        if (branchId != null && !Objects.equals(record.getBranchId(), branchId)) {
+            throw new RuntimeException("Record not found with id: " + id + " for branch " + branchId);
+        }
         record.setBillUrl(billUrl);
         return trackerBillPaymentDetailsRepository.save(record);
     }

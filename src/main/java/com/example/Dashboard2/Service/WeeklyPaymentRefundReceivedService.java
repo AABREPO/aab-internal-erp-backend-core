@@ -29,21 +29,27 @@ public class WeeklyPaymentRefundReceivedService {
         }
         WeeklyPaymentRefundReceived saved = refundReceivedRepository.save(refundReceived);
 
-        paymentsReceivedService.recalculateWeeklyRefundPayment(saved.getWeeklyNumber(), saved.getDate());
+        paymentsReceivedService.recalculateWeeklyRefundPayment(saved.getWeeklyNumber(), saved.getDate(), saved.getBranchId());
         return saved;
     }
     public List<WeeklyPaymentRefundReceived> getAllRefundReceived(){
         return refundReceivedRepository.findAll();
     }
+    public List<WeeklyPaymentRefundReceived> getAllRefundReceivedByBranch(Long branchId){
+        return refundReceivedRepository.findByBranchId(branchId);
+    }
     public List<WeeklyPaymentRefundReceived> getRefundReceivedByDate(LocalDate date){
         return refundReceivedRepository.findByDate(date);
+    }
+    public List<WeeklyPaymentRefundReceived> getRefundReceivedByDateAndBranch(LocalDate date, Long branchId){
+        return refundReceivedRepository.findByDateAndBranchId(date, branchId);
     }
     public void deleteRefundReceived(Long id){
         WeeklyPaymentRefundReceived existing = refundReceivedRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Refund Received not found"));
 
-        paymentsReceivedService.recalculateWeeklyRefundPayment(existing.getWeeklyNumber(), existing.getDate());
         refundReceivedRepository.deleteById(id);
+        paymentsReceivedService.recalculateWeeklyRefundPayment(existing.getWeeklyNumber(), existing.getDate(), existing.getBranchId());
     }
     public WeeklyPaymentRefundReceived editRefundReceived(Long id, String username, WeeklyPaymentRefundReceived updatedRefundReceived) {
         WeeklyPaymentRefundReceived existing = refundReceivedRepository.findById(id)
@@ -84,7 +90,7 @@ public class WeeklyPaymentRefundReceivedService {
 
         // ✅ Only trigger recalculation if labourId is present AND vendor/contractor are null
         if (saved.getLabourId() != null && saved.getVendorId() == null && saved.getContractorId() == null) {
-            paymentsReceivedService.recalculateWeeklyRefundPayment(saved.getWeeklyNumber(), saved.getDate());
+            paymentsReceivedService.recalculateWeeklyRefundPayment(saved.getWeeklyNumber(), saved.getDate(), saved.getBranchId());
         }
 
         return saved;

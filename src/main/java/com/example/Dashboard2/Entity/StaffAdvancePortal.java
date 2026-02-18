@@ -49,5 +49,7 @@ public class StaffAdvancePortal {
     private Long loanPortalId;
     @JsonProperty("allow_to_edit")
     private boolean allowToEdit = false;
+    @JsonProperty("branch_id")
+    private Long branchId;
 
 }

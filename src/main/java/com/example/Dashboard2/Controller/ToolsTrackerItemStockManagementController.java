@@ -41,11 +41,6 @@ public class ToolsTrackerItemStockManagementController {
         return ResponseEntity.ok(toolsTrackerItemStockManagementService.getByBrandNameId(brandNameId));
     }
 
-    @GetMapping("/getByMachineNumber/{machineNumber}")
-    public ResponseEntity<List<ToolsTrackerItemStockManagement>> getByMachineNumber(@PathVariable String machineNumber) {
-        return ResponseEntity.ok(toolsTrackerItemStockManagementService.getByMachineNumber(machineNumber));
-    }
-
     @GetMapping("/getByToolStatus/{toolStatus}")
     public ResponseEntity<List<ToolsTrackerItemStockManagement>> getByToolStatus(@PathVariable String toolStatus) {
         return ResponseEntity.ok(toolsTrackerItemStockManagementService.getByToolStatus(toolStatus));

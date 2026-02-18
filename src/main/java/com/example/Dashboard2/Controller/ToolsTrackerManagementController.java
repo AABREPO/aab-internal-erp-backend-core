@@ -102,6 +102,11 @@ public class ToolsTrackerManagementController {
         return ResponseEntity.ok(toolsTrackerManagementService.getServiceCount());
     }
 
+    @GetMapping("/getServiceReturnCount")
+    public ResponseEntity<Long> getServiceReturnCount(){
+        return ResponseEntity.ok(toolsTrackerManagementService.getServiceReturnCount());
+    }
+
     @GetMapping("/getRelocationCount")
     public ResponseEntity<Long> getRelocation(){
         return ResponseEntity.ok(toolsTrackerManagementService.getRelocationCount());

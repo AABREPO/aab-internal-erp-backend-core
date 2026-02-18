@@ -5,7 +5,9 @@ import com.example.Dashboard2.Repository.WeeklyPaymentBillDataListRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -15,21 +17,33 @@ public class WeeklyPaymentBillDataListService {
     private WeeklyPaymentBillDataListRepository repository;
     // Save or Update
     public WeeklyPaymentBillDataList save(WeeklyPaymentBillDataList data) {
+        if (data.getCreatedAt() == null) {
+            data.setCreatedAt(LocalDateTime.now());
+        }
         return repository.save(data);
     }
     // Get all records
-    public List<WeeklyPaymentBillDataList> getAll() {
-        return repository.findAll();
+    public List<WeeklyPaymentBillDataList> getAll(Long branchId) {
+        return branchId != null ? repository.findByBranchId(branchId) : repository.findAll();
     }
     // Get by ID
-    public Optional<WeeklyPaymentBillDataList> getById(Long id) {
-        return repository.findById(id);
+    public Optional<WeeklyPaymentBillDataList> getById(Long id, Long branchId) {
+        Optional<WeeklyPaymentBillDataList> data = repository.findById(id);
+        if (branchId == null) {
+            return data;
+        }
+        return data.filter(p -> Objects.equals(p.getBranchId(), branchId));
     }
     // Update by ID
     public WeeklyPaymentBillDataList update(Long id, WeeklyPaymentBillDataList updatedData) {
         return repository.findById(id).map(existing -> {
+            if (updatedData.getBranchId() == null) {
+                updatedData.setBranchId(existing.getBranchId());
+            } else if (!Objects.equals(existing.getBranchId(), updatedData.getBranchId())) {
+                throw new IllegalArgumentException("Branch ID cannot be changed for an existing bill entry.");
+            }
             existing.setDate(updatedData.getDate());
-            existing.setCreatedAt(updatedData.getCreatedAt());
+            existing.setCreatedAt(updatedData.getCreatedAt() != null ? updatedData.getCreatedAt() : existing.getCreatedAt());
             existing.setContractorId(updatedData.getContractorId());
             existing.setVendorId(updatedData.getVendorId());
             existing.setEmployeeId(updatedData.getEmployeeId());
@@ -55,6 +69,7 @@ public class WeeklyPaymentBillDataListService {
             existing.setClaimPaymentId(updatedData.getClaimPaymentId());
             existing.setTenantComplexName(updatedData.getTenantComplexName());
             existing.setVendorPaymentTrackerId(updatedData.getVendorPaymentTrackerId());
+            existing.setBranchId(updatedData.getBranchId());
             return repository.save(existing);
         }).orElseThrow(() -> new RuntimeException("Record not found with id " + id));
     }

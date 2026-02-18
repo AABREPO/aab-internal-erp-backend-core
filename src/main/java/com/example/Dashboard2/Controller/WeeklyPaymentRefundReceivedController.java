@@ -21,13 +21,20 @@ public class WeeklyPaymentRefundReceivedController {
         return ResponseEntity.ok(saved);
     }
     @GetMapping("/date/{date}")
-    public ResponseEntity<List<WeeklyPaymentRefundReceived>> getRefundReceivedByDate(@PathVariable String date){
+    public ResponseEntity<List<WeeklyPaymentRefundReceived>> getRefundReceivedByDate(
+            @PathVariable String date,
+            @RequestParam(required = false) Long branchId){
         LocalDate localDate = LocalDate.parse(date);
-        List<WeeklyPaymentRefundReceived> entries =refundReceivedService.getRefundReceivedByDate(localDate);
+        List<WeeklyPaymentRefundReceived> entries = branchId != null
+                ? refundReceivedService.getRefundReceivedByDateAndBranch(localDate, branchId)
+                : refundReceivedService.getRefundReceivedByDate(localDate);
         return ResponseEntity.ok(entries);
     }
     @GetMapping("/getAll")
-    public List<WeeklyPaymentRefundReceived> getAllRefundReceived(){
+    public List<WeeklyPaymentRefundReceived> getAllRefundReceived(@RequestParam(required = false) Long branchId){
+        if (branchId != null) {
+            return refundReceivedService.getAllRefundReceivedByBranch(branchId);
+        }
         return refundReceivedService.getAllRefundReceived();
     }
     @DeleteMapping("/delete/{id}")

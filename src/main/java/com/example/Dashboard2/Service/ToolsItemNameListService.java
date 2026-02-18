@@ -131,7 +131,7 @@ public class ToolsItemNameListService {
                     history.setOldItemIdsId(oldDetail.getItemIdsId());
                     history.setOldBrandId(oldDetail.getBrandId());
                     history.setOldModel(oldDetail.getModel());
-                    history.setOldMachineNumber(oldDetail.getMachineNumber());
+                    history.setOldMachineNumberId(oldDetail.getMachineNumberId());
                     history.setOldToolStatus(oldDetail.getToolStatus());
                     
                     // Store new values
@@ -139,7 +139,7 @@ public class ToolsItemNameListService {
                     history.setNewItemIdsId(newDetail.getItemIdsId());
                     history.setNewBrandId(newDetail.getBrandId());
                     history.setNewModel(newDetail.getModel());
-                    history.setNewMachineNumber(newDetail.getMachineNumber());
+                    history.setNewMachineNumberId(newDetail.getMachineNumberId());
                     history.setNewToolStatus(newDetail.getToolStatus());
                     
                     toolsItemNameWithOtherDetailsHistoryRepository.save(history);
@@ -163,7 +163,7 @@ public class ToolsItemNameListService {
                !areEqual(oldDetail.getItemIdsId(), newDetail.getItemIdsId()) ||
                !areEqual(oldDetail.getBrandId(), newDetail.getBrandId()) ||
                !areEqual(oldDetail.getModel(), newDetail.getModel()) ||
-               !areEqual(oldDetail.getMachineNumber(), newDetail.getMachineNumber()) ||
+               !areEqual(oldDetail.getMachineNumberId(), newDetail.getMachineNumberId()) ||
                !areEqual(oldDetail.getToolStatus(), newDetail.getToolStatus());
     }
 

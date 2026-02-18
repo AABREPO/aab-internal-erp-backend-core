@@ -1,5 +1,6 @@
 package com.example.Dashboard2.Service;
 
+import com.example.Dashboard2.DTO.EmployeeBasicDetailsDto;
 import com.example.Dashboard2.Entity.EmployeeDetails;
 import com.example.Dashboard2.Repository.EmployeeDetailsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +29,8 @@ public class EmployeeDetailsService {
     }
 
     // Get all Site Engineers
-    public List<EmployeeDetails> getAllSiteEngineers() {
-        return employeeDetailsRepository.findByRoleOfEmployee("Site Engineer");
+    public List<EmployeeBasicDetailsDto> getAllSiteEngineers() {
+        return employeeDetailsRepository.findEmployeeBasicDetailsByRoleOfEmployee("Site Engineer");
     }
 
     // Get employee by ID

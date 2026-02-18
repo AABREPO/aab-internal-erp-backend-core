@@ -60,5 +60,7 @@ public class LoanPortal {
     private String fileUrl;
     @JsonProperty("allow_to_edit")
     private boolean allowToEdit = false;
+    @JsonProperty("branch_id")
+    private Long branchId;
 
 }

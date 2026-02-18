@@ -23,14 +23,15 @@ public class WeeklyPaymentBillDataListController {
 
     // ✅ Get all
     @GetMapping("/all")
-    public ResponseEntity<List<WeeklyPaymentBillDataList>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<List<WeeklyPaymentBillDataList>> getAll(@RequestParam(required = false) Long branchId) {
+        return ResponseEntity.ok(service.getAll(branchId));
     }
 
     // ✅ Get by ID
     @GetMapping("/{id}")
-    public ResponseEntity<WeeklyPaymentBillDataList> getById(@PathVariable Long id) {
-        return service.getById(id)
+    public ResponseEntity<WeeklyPaymentBillDataList> getById(@PathVariable Long id,
+                                                              @RequestParam(required = false) Long branchId) {
+        return service.getById(id, branchId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -38,7 +39,11 @@ public class WeeklyPaymentBillDataListController {
     // ✅ Update by ID
     @PutMapping("/update/{id}")
     public ResponseEntity<WeeklyPaymentBillDataList> update(@PathVariable Long id, @RequestBody WeeklyPaymentBillDataList data) {
-        return ResponseEntity.ok(service.update(id, data));
+        try {
+            return ResponseEntity.ok(service.update(id, data));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // ✅ Delete by ID

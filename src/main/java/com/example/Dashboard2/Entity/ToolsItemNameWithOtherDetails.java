@@ -18,8 +18,8 @@ public class ToolsItemNameWithOtherDetails {
     private String brandId;
     @JsonProperty("model")
     private String model;
-    @JsonProperty("machine_number")
-    private String machineNumber;
+    @JsonProperty("machine_number_id")
+    private String machineNumberId;
     @JsonProperty("tool_status")
     private String toolStatus;
     @Lob
@@ -67,12 +67,12 @@ public class ToolsItemNameWithOtherDetails {
         this.model = model;
     }
 
-    public String getMachineNumber() {
-        return machineNumber;
+    public String getMachineNumberId() {
+        return machineNumberId;
     }
 
-    public void setMachineNumber(String machineNumber) {
-        this.machineNumber = machineNumber;
+    public void setMachineNumberId(String machineNumberId) {
+        this.machineNumberId = machineNumberId;
     }
 
     public String getToolStatus() {

@@ -10,6 +10,5 @@ import java.util.List;
 public interface ToolsTrackerItemStockManagementRepository extends JpaRepository<ToolsTrackerItemStockManagement, Long> {
     List<ToolsTrackerItemStockManagement> findByItemNameId(String itemNameId);
     List<ToolsTrackerItemStockManagement> findByBrandNameId(String brandNameId);
-    List<ToolsTrackerItemStockManagement> findByMachineNumber(String machineNumber);
     List<ToolsTrackerItemStockManagement> findByToolStatus(String toolStatus);
 }

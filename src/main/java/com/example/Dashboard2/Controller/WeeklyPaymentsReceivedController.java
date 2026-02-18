@@ -21,11 +21,19 @@ public class WeeklyPaymentsReceivedController {
         this.expenseService = expenseService;
     }
     @GetMapping("/week/{weekNumber}")
-    public java.util.List<WeeklyPaymentsReceived> getByWeek(@PathVariable Integer weekNumber) {
+    public java.util.List<WeeklyPaymentsReceived> getByWeek(
+            @PathVariable Integer weekNumber,
+            @RequestParam(required = false) Long branchId) {
+        if (branchId != null) {
+            return paymentsService.getPaymentsByWeekAndBranch(weekNumber, branchId);
+        }
         return paymentsService.getPaymentsByWeek(weekNumber);
     }
     @GetMapping("/getAll")
-    public List<WeeklyPaymentsReceived> getAllTypes(){
+    public List<WeeklyPaymentsReceived> getAllTypes(@RequestParam(required = false) Long branchId){
+        if (branchId != null) {
+            return paymentsService.getAllWeeklyPaymentsReceivedByBranch(branchId);
+        }
         return paymentsService.getAllWeeklyPaymentsReceived();
     }
     @PostMapping("/save")
@@ -53,7 +61,8 @@ public class WeeklyPaymentsReceivedController {
             @RequestParam(required = false, defaultValue = "false") boolean carryForward,
             @RequestParam(required = false, defaultValue = "0") double carryAmount,
             @RequestParam(required = false, defaultValue = "0") double discountAmount,
-            @RequestParam(required = false) Integer currentWeek) {  // Add this parameter
+            @RequestParam(required = false) Integer currentWeek,
+            @RequestParam Long branchId) {
         Integer weekToClose = currentWeek != null ? currentWeek : paymentsService.getMaxWeeklyNumber();
         if (weekToClose == null) {
             weekToClose = paymentsService.getCurrentCalendarWeek();
@@ -61,8 +70,8 @@ public class WeeklyPaymentsReceivedController {
         int nextWeek = weekToClose + 1;
         // ... rest of the code using weekToClose instead of currentWeek
         // Close current periods
-        paymentsService.closeCurrentPeriod(currentWeek);
-        expenseService.closeCurrentPeriod(currentWeek);
+        paymentsService.closeCurrentPeriod(weekToClose, branchId);
+        expenseService.closeCurrentPeriod(weekToClose, branchId);
         if (carryForward && carryAmount > 0) {
             WeeklyPaymentsReceived carryPayment = new WeeklyPaymentsReceived();
             carryPayment.setDate(LocalDate.now());
@@ -73,6 +82,7 @@ public class WeeklyPaymentsReceivedController {
             carryPayment.setStatus(false);
             carryPayment.setPeriodStartDate(LocalDate.now());
             carryPayment.setDiscountAmount(discountAmount);
+            carryPayment.setBranchId(branchId);
             paymentsService.savePayment(carryPayment);
         }
         return nextWeek;
@@ -82,15 +92,16 @@ public class WeeklyPaymentsReceivedController {
             @RequestParam String closureType,
             @RequestParam(required = false, defaultValue = "false") boolean carryForward,
             @RequestParam(required = false, defaultValue = "0") double carryAmount,
-            @RequestParam(required = false, defaultValue = "0") double discountAmount) {
+            @RequestParam(required = false, defaultValue = "0") double discountAmount,
+            @RequestParam Long branchId) {
         Integer currentWeek = paymentsService.getMaxWeeklyNumber();
         if (currentWeek == null) {
             currentWeek = paymentsService.getCurrentCalendarWeek();
         }
         int nextWeek = currentWeek + 1;
         // Close current periods
-        paymentsService.closeCurrentPeriod(currentWeek);
-        expenseService.closeCurrentPeriod(currentWeek);
+        paymentsService.closeCurrentPeriod(currentWeek, branchId);
+        expenseService.closeCurrentPeriod(currentWeek, branchId);
         if (carryForward && carryAmount > 0) {
             WeeklyPaymentsReceived carryPayment = new WeeklyPaymentsReceived();
             carryPayment.setDate(LocalDate.now());
@@ -101,6 +112,7 @@ public class WeeklyPaymentsReceivedController {
             carryPayment.setStatus(false);
             carryPayment.setPeriodStartDate(LocalDate.now());
             carryPayment.setDiscountAmount(discountAmount);
+            carryPayment.setBranchId(branchId);
             paymentsService.savePayment(carryPayment);
         }
         return nextWeek;
