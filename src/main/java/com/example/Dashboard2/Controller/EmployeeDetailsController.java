@@ -35,6 +35,12 @@ public class EmployeeDetailsController {
     public List<EmployeeDetails> getAllEmployeeDetails() {
         return employeeDetailsService.getAllEmployeeDetails();
     }
+
+    @GetMapping("/basic/getAll")
+    public List<EmployeeBasicDetailsDto> getAllEmployeeBasicDetails(){
+        return employeeDetailsService.getAllEmployeeBasicDetails();
+    }
+
     // Get all Site Engineers
     @GetMapping("/site_engineers")
     public List<EmployeeBasicDetailsDto> getAllSiteEngineers() {

@@ -56,5 +56,7 @@ public class AdvancePortal {
     private boolean allowToEdit = false;
     @JsonProperty("branch_id")
     private Long branchId;
+    @JsonProperty("source")
+    private String source;
 
 }

@@ -20,13 +20,12 @@ public class LoanPortalController {
         return ResponseEntity.ok(savedLoan);
     }
     @GetMapping("/all")
-    public ResponseEntity<List<LoanPortal>> getAll(@RequestParam(required = false) Long branchId) {
-        return ResponseEntity.ok(service.getAll(branchId));
+    public ResponseEntity<List<LoanPortal>> getAll() {
+        return ResponseEntity.ok(service.getAll());
     }
     @GetMapping("/{id}")
-    public ResponseEntity<LoanPortal> getById(@PathVariable Long id,
-                                              @RequestParam(required = false) Long branchId) {
-        return service.getById(id, branchId)
+    public ResponseEntity<LoanPortal> getById(@PathVariable Long id) {
+        return service.getById(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

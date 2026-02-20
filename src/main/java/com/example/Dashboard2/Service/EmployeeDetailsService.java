@@ -28,6 +28,10 @@ public class EmployeeDetailsService {
         return employeeDetailsRepository.findAll();
     }
 
+    public List<EmployeeBasicDetailsDto> getAllEmployeeBasicDetails(){
+        return employeeDetailsRepository.findAllEmployeeBasicDetails();
+    }
+
     // Get all Site Engineers
     public List<EmployeeBasicDetailsDto> getAllSiteEngineers() {
         return employeeDetailsRepository.findEmployeeBasicDetailsByRoleOfEmployee("Site Engineer");

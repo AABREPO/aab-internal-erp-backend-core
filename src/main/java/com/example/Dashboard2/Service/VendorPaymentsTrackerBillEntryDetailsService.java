@@ -22,25 +22,18 @@ public class VendorPaymentsTrackerBillEntryDetailsService {
         }
         return billEntryDetailsRepository.save(vendorPaymentsTrackerBillEntryDetails);
     }
-    public List<VendorPaymentsTrackerBillEntryDetails> getAllVendorPaymentsTrackerBillEntryDetails(Long branchId){
-        return branchId != null
-                ? billEntryDetailsRepository.findByBranchId(branchId)
-                : billEntryDetailsRepository.findAll();
+    public List<VendorPaymentsTrackerBillEntryDetails> getAllVendorPaymentsTrackerBillEntryDetails(){
+        return billEntryDetailsRepository.findAll();
     }
-    public List<VendorPaymentsTrackerBillEntryDetails> getVendorPaymentsTrackerById(Long vendorPaymentsTrackerId, Long branchId){
-        return branchId != null
-                ? billEntryDetailsRepository.findByVendorPaymentsTrackerIdAndBranchId(vendorPaymentsTrackerId, branchId)
-                : billEntryDetailsRepository.findByVendorPaymentsTrackerId(vendorPaymentsTrackerId);
+    public List<VendorPaymentsTrackerBillEntryDetails> getVendorPaymentsTrackerById(Long vendorPaymentsTrackerId){
+        return billEntryDetailsRepository.findByVendorPaymentsTrackerId(vendorPaymentsTrackerId);
     }
 
-    public VendorPaymentsTrackerBillEntryDetails updateEnteredByAndDate(Long id, String enteredBy, String enteredDate, Long branchId) {
+    public VendorPaymentsTrackerBillEntryDetails updateEnteredByAndDate(Long id, String enteredBy, String enteredDate) {
         Optional<VendorPaymentsTrackerBillEntryDetails> optionalEntity = billEntryDetailsRepository.findById(id);
 
         if (optionalEntity.isPresent()) {
             VendorPaymentsTrackerBillEntryDetails existingEntry = optionalEntity.get();
-            if (branchId != null && !Objects.equals(existingEntry.getBranchId(), branchId)) {
-                throw new RuntimeException("Record not found with id: " + id + " for branch " + branchId);
-            }
             existingEntry.setEnteredBy(enteredBy);
             existingEntry.setEnteredDate(enteredDate);
             return billEntryDetailsRepository.save(existingEntry);

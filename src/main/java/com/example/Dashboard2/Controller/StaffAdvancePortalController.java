@@ -23,40 +23,33 @@ public class StaffAdvancePortalController {
         return ResponseEntity.ok(savedAdvance);
     }
     @GetMapping("/all")
-    public ResponseEntity<List<StaffAdvancePortal>> getAll(@RequestParam(required = false) Long branchId) {
-        return ResponseEntity.ok(service.getAll(branchId));
+    public ResponseEntity<List<StaffAdvancePortal>> getAll() {
+        return ResponseEntity.ok(service.getAll());
     }
     @GetMapping("/employee/{employeeId}")
-    public ResponseEntity<List<StaffAdvancePortal>> getByEmployee(@PathVariable int employeeId,
-                                                                  @RequestParam(required = false) Long branchId) {
-        return ResponseEntity.ok(service.getByEmployeeId(employeeId, branchId));
+    public ResponseEntity<List<StaffAdvancePortal>> getByEmployee(@PathVariable int employeeId) {
+        return ResponseEntity.ok(service.getByEmployeeId(employeeId));
     }
     @GetMapping("/type/{type}")
-    public ResponseEntity<List<StaffAdvancePortal>> getByType(@PathVariable String type,
-                                                              @RequestParam(required = false) Long branchId) {
-        return ResponseEntity.ok(service.getByType(type, branchId));
+    public ResponseEntity<List<StaffAdvancePortal>> getByType(@PathVariable String type) {
+        return ResponseEntity.ok(service.getByType(type));
     }
     @GetMapping("/employee/{employeeId}/type/{type}")
-    public ResponseEntity<List<StaffAdvancePortal>> getByEmployeeAndType(@PathVariable int employeeId,
-                                                                          @PathVariable String type,
-                                                                          @RequestParam(required = false) Long branchId) {
-        return ResponseEntity.ok(service.getByEmployeeIdAndType(employeeId, type, branchId));
+    public ResponseEntity<List<StaffAdvancePortal>> getByEmployeeAndType(@PathVariable int employeeId, @PathVariable String type) {
+        return ResponseEntity.ok(service.getByEmployeeIdAndType(employeeId, type));
     }
     @GetMapping("/week/{weekNo}")
-    public ResponseEntity<List<StaffAdvancePortal>> getByWeek(@PathVariable int weekNo,
-                                                              @RequestParam(required = false) Long branchId) {
-        return ResponseEntity.ok(service.getByWeekNo(weekNo, branchId));
+    public ResponseEntity<List<StaffAdvancePortal>> getByWeek(@PathVariable int weekNo) {
+        return ResponseEntity.ok(service.getByWeekNo(weekNo));
     }
     @GetMapping("/employee/{employeeId}/week/{weekNo}")
     public ResponseEntity<List<StaffAdvancePortal>> getByEmployeeAndWeek(@PathVariable int employeeId,
-                                                                         @PathVariable int weekNo,
-                                                                         @RequestParam(required = false) Long branchId) {
-        return ResponseEntity.ok(service.getByEmployeeIdAndWeekNo(employeeId, weekNo, branchId));
+                                                                         @PathVariable int weekNo) {
+        return ResponseEntity.ok(service.getByEmployeeIdAndWeekNo(employeeId, weekNo));
     }
     @GetMapping("/{id}")
-    public ResponseEntity<StaffAdvancePortal> getById(@PathVariable Long id,
-                                                      @RequestParam(required = false) Long branchId) {
-        Optional<StaffAdvancePortal> advance = service.getById(id, branchId);
+    public ResponseEntity<StaffAdvancePortal> getById(@PathVariable Long id) {
+        Optional<StaffAdvancePortal> advance = service.getById(id);
         return advance.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
     @PutMapping("/{id}")

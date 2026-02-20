@@ -18,14 +18,13 @@ public class AdvancePortalController {
     private AdvancePortalService advancePortalService;
 
     @GetMapping("/getAll")
-    public List<AdvancePortal> getAllAdvancePortals(@RequestParam(required = false) Long branchId) {
-        return advancePortalService.getAllAdvancePortals(branchId);
+    public List<AdvancePortal> getAllAdvancePortals() {
+        return advancePortalService.getAllAdvancePortals();
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<AdvancePortal> getAdvancePortalById(@PathVariable Long id,
-                                                              @RequestParam(required = false) Long branchId) {
-        return advancePortalService.getAdvancePortalById(id, branchId)
+    public ResponseEntity<AdvancePortal> getAdvancePortalById(@PathVariable Long id) {
+        return advancePortalService.getAdvancePortalById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

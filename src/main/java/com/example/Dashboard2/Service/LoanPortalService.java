@@ -368,15 +368,11 @@ public class LoanPortalService {
         paymentsReceivedService.recalculateWeeklyLoanAdvanceRefundPayment(existingLoan.getWeekNo(), existingLoan.getDate(), existingLoan.getBranchId());
         return List.of(existingLoan);
     }
-    public List<LoanPortal> getAll(Long branchId) {
-        return branchId != null ? repository.findByBranchId(branchId) : repository.findAll();
+    public List<LoanPortal> getAll() {
+        return repository.findAll();
     }
-    public Optional<LoanPortal> getById(Long id, Long branchId) {
-        Optional<LoanPortal> loan = repository.findById(id);
-        if (branchId == null) {
-            return loan;
-        }
-        return loan.filter(p -> Objects.equals(p.getBranchId(), branchId));
+    public Optional<LoanPortal> getById(Long id) {
+        return repository.findById(id);
     }
     @Transactional
     public void deleteById(Long id) {

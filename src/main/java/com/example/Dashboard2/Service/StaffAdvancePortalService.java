@@ -380,46 +380,32 @@ public class StaffAdvancePortalService {
         return resultEntries;
     }
 
-    public List<StaffAdvancePortal> getAll(Long branchId) {
-        return branchId != null ? repository.findByBranchId(branchId) : repository.findAll();
+    public List<StaffAdvancePortal> getAll() {
+        return repository.findAll();
     }
 
-    public List<StaffAdvancePortal> getByEmployeeId(int employeeId, Long branchId) {
-        return branchId != null
-                ? repository.findByEmployeeIdAndBranchId(employeeId, branchId)
-                : repository.findByEmployeeId(employeeId);
+    public List<StaffAdvancePortal> getByEmployeeId(int employeeId) {
+        return repository.findByEmployeeId(employeeId);
     }
 
-    public List<StaffAdvancePortal> getByType(String type, Long branchId) {
-        return branchId != null
-                ? repository.findByTypeAndBranchId(type, branchId)
-                : repository.findByType(type);
+    public List<StaffAdvancePortal> getByType(String type) {
+        return repository.findByType(type);
     }
 
-    public List<StaffAdvancePortal> getByEmployeeIdAndType(int employeeId, String type, Long branchId) {
-        return branchId != null
-                ? repository.findByEmployeeIdAndTypeAndBranchId(employeeId, type, branchId)
-                : repository.findByEmployeeIdAndType(employeeId, type);
+    public List<StaffAdvancePortal> getByEmployeeIdAndType(int employeeId, String type) {
+        return repository.findByEmployeeIdAndType(employeeId, type);
     }
 
-    public List<StaffAdvancePortal> getByWeekNo(int weekNo, Long branchId) {
-        return branchId != null
-                ? repository.findByWeekNoAndBranchId(weekNo, branchId)
-                : repository.findByWeekNo(weekNo);
+    public List<StaffAdvancePortal> getByWeekNo(int weekNo) {
+        return repository.findByWeekNo(weekNo);
     }
 
-    public List<StaffAdvancePortal> getByEmployeeIdAndWeekNo(int employeeId, int weekNo, Long branchId) {
-        return branchId != null
-                ? repository.findByEmployeeIdAndWeekNoAndBranchId(employeeId, weekNo, branchId)
-                : repository.findByEmployeeIdAndWeekNo(employeeId, weekNo);
+    public List<StaffAdvancePortal> getByEmployeeIdAndWeekNo(int employeeId, int weekNo) {
+        return repository.findByEmployeeIdAndWeekNo(employeeId, weekNo);
     }
 
-    public Optional<StaffAdvancePortal> getById(Long id, Long branchId) {
-        Optional<StaffAdvancePortal> staffAdvance = repository.findById(id);
-        if (branchId == null) {
-            return staffAdvance;
-        }
-        return staffAdvance.filter(p -> Objects.equals(p.getBranchId(), branchId));
+    public Optional<StaffAdvancePortal> getById(Long id) {
+        return repository.findById(id);
     }
 
     public void deleteById(Long id) {

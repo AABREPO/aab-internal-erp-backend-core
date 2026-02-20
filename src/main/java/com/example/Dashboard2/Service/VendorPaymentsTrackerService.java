@@ -53,17 +53,13 @@ public class VendorPaymentsTrackerService {
         return billRepository.saveAll(bills);
     }
     // Fetch all trackers
-    public List<VendorPaymentsTracker> getAllTrackers(Long branchId) {
-        return branchId != null ? trackerRepository.findByBranchId(branchId) : trackerRepository.findAll();
+    public List<VendorPaymentsTracker> getAllTrackers() {
+        return trackerRepository.findAll();
     }
     // Fetch a tracker by id (with bills)
-    public VendorPaymentsTracker getTracker(Long id, Long branchId) {
-        VendorPaymentsTracker tracker = trackerRepository.findById(id)
+    public VendorPaymentsTracker getTracker(Long id) {
+        return trackerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tracker not found with id: " + id));
-        if (branchId != null && !Objects.equals(tracker.getBranchId(), branchId)) {
-            throw new RuntimeException("Tracker not found with id: " + id + " for branch " + branchId);
-        }
-        return tracker;
     }
     // Reset all bills in a tracker to NOT VERIFIED
     public void resetBillsToNotVerified(Long trackerId) {
@@ -168,10 +164,8 @@ public class VendorPaymentsTrackerService {
         throw new RuntimeException("No tracker or related records found with ID: " + id);
     }
     // Get all fully paid trackers with all related data (bills, payment details, entry details)
-    public List<java.util.Map<String, Object>> getFullyPaidTrackerData(Long branchId) {
-        List<VendorPaymentsTracker> allTrackers = branchId != null
-                ? trackerRepository.findByBranchId(branchId)
-                : trackerRepository.findAll();
+    public List<java.util.Map<String, Object>> getFullyPaidTrackerData() {
+        List<VendorPaymentsTracker> allTrackers = trackerRepository.findAll();
         return allTrackers.stream()
                 .filter(tracker -> {
                     // Get all bills for this tracker
@@ -207,10 +201,8 @@ public class VendorPaymentsTrackerService {
                 .collect(java.util.stream.Collectors.toList());
     }
     // Alternative: Get fully paid AND verified trackers with all related data
-    public List<java.util.Map<String, Object>> getFullyPaidAndVerifiedTrackerData(Long branchId) {
-        List<VendorPaymentsTracker> allTrackers = branchId != null
-                ? trackerRepository.findByBranchId(branchId)
-                : trackerRepository.findAll();
+    public List<java.util.Map<String, Object>> getFullyPaidAndVerifiedTrackerData() {
+        List<VendorPaymentsTracker> allTrackers = trackerRepository.findAll();
         return allTrackers.stream()
                 .filter(tracker -> {
                     List<VendorPaymentsTrackerBillVerification> bills =

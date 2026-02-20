@@ -18,21 +18,19 @@ public class VendorPaymentsTrackerBillPaymentDetailsController {
         return vendorPaymentsTrackerBillPaymentDetailsService.saveTrackerBillPaymentDetails(vendorPaymentsTrackerBillPaymentDetails);
     }
     @GetMapping("/getAll")
-    public List<VendorPaymentsTrackerBillPaymentDetails> getAllVendorPaymentsTrackerBillPaymentDetails(@RequestParam(required = false) Long branchId){
-        return vendorPaymentsTrackerBillPaymentDetailsService.getAllVendorPaymentsTrackerBillPaymentDetails(branchId);
+    public List<VendorPaymentsTrackerBillPaymentDetails> getAllVendorPaymentsTrackerBillPaymentDetails(){
+        return vendorPaymentsTrackerBillPaymentDetailsService.getAllVendorPaymentsTrackerBillPaymentDetails();
     }
     @GetMapping("/get/{vendorPaymentsTrackerId}")
-    public List<VendorPaymentsTrackerBillPaymentDetails> getByVendorPaymentsTrackerId(@PathVariable Long vendorPaymentsTrackerId,
-                                                                                       @RequestParam(required = false) Long branchId){
-        return vendorPaymentsTrackerBillPaymentDetailsService.getVendorPaymentsTrackerPaymentById(vendorPaymentsTrackerId, branchId);
+    public List<VendorPaymentsTrackerBillPaymentDetails> getByVendorPaymentsTrackerId(@PathVariable Long vendorPaymentsTrackerId){
+        return vendorPaymentsTrackerBillPaymentDetailsService.getVendorPaymentsTrackerPaymentById(vendorPaymentsTrackerId);
     }
     @PutMapping("/update/{id}")
     public VendorPaymentsTrackerBillPaymentDetails updateBillUrl(
             @PathVariable Long id,
-            @RequestBody VendorPaymentsTrackerBillPaymentDetails body,
-            @RequestParam(required = false) Long branchId
+            @RequestBody VendorPaymentsTrackerBillPaymentDetails body
     ){
-        return vendorPaymentsTrackerBillPaymentDetailsService.updateBillUrl(id , body.getBillUrl(), branchId);
+        return vendorPaymentsTrackerBillPaymentDetailsService.updateBillUrl(id , body.getBillUrl());
     }
 
 }

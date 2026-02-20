@@ -16,4 +16,9 @@ public interface EmployeeDetailsRepository extends JpaRepository<EmployeeDetails
     @Query("SELECT new com.example.Dashboard2.DTO.EmployeeBasicDetailsDto(e.id, e.employeeName, e.employeeMobileNumber) " +
             "FROM EmployeeDetails e WHERE e.roleOfEmployee = :roleOfEmployee")
     List<EmployeeBasicDetailsDto> findEmployeeBasicDetailsByRoleOfEmployee(@Param("roleOfEmployee") String roleOfEmployee);
+
+    @Query("SELECT new com.example.Dashboard2.DTO.EmployeeBasicDetailsDto(e.id, e.employeeName, e.employeeMobileNumber) " +
+            "FROM EmployeeDetails e")
+    List<EmployeeBasicDetailsDto> findAllEmployeeBasicDetails();
+
 }

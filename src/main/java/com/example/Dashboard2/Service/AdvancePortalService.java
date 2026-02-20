@@ -31,18 +31,12 @@ public class AdvancePortalService {
     @Autowired
     private WeeklyPaymentsReceivedService paymentsReceivedService;
 
-    public List<AdvancePortal> getAllAdvancePortals(Long branchId) {
-        return branchId != null
-                ? advancePortalRepository.findByBranchId(branchId)
-                : advancePortalRepository.findAll();
+    public List<AdvancePortal> getAllAdvancePortals() {
+        return advancePortalRepository.findAll();
     }
 
-    public Optional<AdvancePortal> getAdvancePortalById(Long id, Long branchId) {
-        Optional<AdvancePortal> portal = advancePortalRepository.findById(id);
-        if (branchId == null) {
-            return portal;
-        }
-        return portal.filter(p -> Objects.equals(p.getBranchId(), branchId));
+    public Optional<AdvancePortal> getAdvancePortalById(Long id) {
+        return advancePortalRepository.findById(id);
     }
 
     public AdvancePortal createAdvancePortal(AdvancePortal advancePortal) {
