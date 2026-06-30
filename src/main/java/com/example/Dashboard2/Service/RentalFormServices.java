@@ -3,6 +3,7 @@ package com.example.Dashboard2.Service;
 import com.example.Dashboard2.DTO.RentFormEdit;
 import com.example.Dashboard2.Entity.RentFormAudit;
 import com.example.Dashboard2.Entity.RentalForm;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -12,4 +13,5 @@ public interface RentalFormServices {
     boolean updateRentForm(Long id, RentFormEdit rentFormEdit);
     List<RentFormAudit> getRentalFormById(Long rentFormId);
     boolean clearRentalFormData(Long id, String editedBy);
+    String uploadOldRentalFormData(MultipartFile file);
 }

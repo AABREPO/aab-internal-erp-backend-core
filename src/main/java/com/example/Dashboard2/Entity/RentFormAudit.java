@@ -19,6 +19,10 @@ public class RentFormAudit {
     private String newFormType;
     private String oldShopNo;
     private String newShopNo;
+    private Long oldShopNoId;
+    private Long newShopNoId;
+    private Long oldTenantNameId;
+    private Long newTenantNameId;
     private String oldTenantName;
     private String newTenantName;
     private String oldAmount;
@@ -96,6 +100,38 @@ public class RentFormAudit {
 
     public void setNewShopNo(String newShopNo) {
         this.newShopNo = newShopNo;
+    }
+
+    public Long getOldShopNoId() {
+        return oldShopNoId;
+    }
+
+    public void setOldShopNoId(Long oldShopNoId) {
+        this.oldShopNoId = oldShopNoId;
+    }
+
+    public Long getNewShopNoId() {
+        return newShopNoId;
+    }
+
+    public void setNewShopNoId(Long newShopNoId) {
+        this.newShopNoId = newShopNoId;
+    }
+
+    public Long getOldTenantNameId() {
+        return oldTenantNameId;
+    }
+
+    public void setOldTenantNameId(Long oldTenantNameId) {
+        this.oldTenantNameId = oldTenantNameId;
+    }
+
+    public Long getNewTenantNameId() {
+        return newTenantNameId;
+    }
+
+    public void setNewTenantNameId(Long newTenantNameId) {
+        this.newTenantNameId = newTenantNameId;
     }
 
     public String getOldTenantName() {

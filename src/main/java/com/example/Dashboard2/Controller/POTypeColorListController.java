@@ -3,6 +3,7 @@ package com.example.Dashboard2.Controller;
 import com.example.Dashboard2.Entity.POTypeColorList;
 import com.example.Dashboard2.Service.POTypeColorListService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +24,11 @@ public class POTypeColorListController {
     @GetMapping("/getAll")
     public List<POTypeColorList> getAllPoTypeColorList(){
         return poTypeColorListService.getAllPoTypeColorList();
+    }
+
+    @GetMapping("/get/{id}")
+    public ResponseEntity<POTypeColorList> getTypeColorById(@PathVariable Long id){
+        return ResponseEntity.ok(poTypeColorListService.getPOTypeColorById(id));
     }
 
     @PutMapping("/edit/{id}")

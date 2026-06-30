@@ -10,4 +10,5 @@ public interface MonthlyRentReportRepo extends JpaRepository<MonthlyRentReports,
     List<MonthlyRentReports> findByReportNumber(int reportNumber);
     @Query("SELECT MAX(e.reportNumber) FROM MonthlyRentReports e")
     Integer findMaxReportNumber();
+
 }

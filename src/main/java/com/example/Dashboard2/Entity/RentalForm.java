@@ -14,7 +14,9 @@ public class RentalForm {
     private Long id;
     private int eno;
     private String formType;
+    private Long shopNoId;
     private String shopNo;
+    private Long tenantNameId;
     private String tenantName;
     private String amount;
     private String refundAmount;
@@ -24,6 +26,11 @@ public class RentalForm {
     private String attachedFile;
     private LocalDateTime timestamp;
     private String monthlyReportNumber;
+    private String shopClosureDate;
+    private String enteredBy;
+    private String branchId;
+
+
     public Long getId() {
         return id;
     }
@@ -48,12 +55,28 @@ public class RentalForm {
         this.formType = formType;
     }
 
+    public Long getShopNoId() {
+        return shopNoId;
+    }
+
+    public void setShopNoId(Long shopNoId) {
+        this.shopNoId = shopNoId;
+    }
+
     public String getShopNo() {
         return shopNo;
     }
 
     public void setShopNo(String shopNo) {
         this.shopNo = shopNo;
+    }
+
+    public Long getTenantNameId() {
+        return tenantNameId;
+    }
+
+    public void setTenantNameId(Long tenantNameId) {
+        this.tenantNameId = tenantNameId;
     }
 
     public String getTenantName() {
@@ -126,5 +149,29 @@ public class RentalForm {
 
     public void setMonthlyReportNumber(String monthlyReportNumber) {
         this.monthlyReportNumber = monthlyReportNumber;
+    }
+
+    public String getShopClosureDate() {
+        return shopClosureDate;
+    }
+
+    public void setShopClosureDate(String shopClosureDate) {
+        this.shopClosureDate = shopClosureDate;
+    }
+
+    public String getEnteredBy() {
+        return enteredBy;
+    }
+
+    public void setEnteredBy(String enteredBy) {
+        this.enteredBy = enteredBy;
+    }
+
+    public String getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(String branchId) {
+        this.branchId = branchId;
     }
 }

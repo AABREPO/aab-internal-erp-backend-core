@@ -12,6 +12,8 @@ public class POItemNameList {
     private String itemName;
     private String category;
     private String groupName;
+    @Column(nullable = false)
+    private boolean isDecimalAllowed = false;
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "po_item_name_list_id")
     private List<POItemNameListWithAllOtherPOEntity> otherPOEntityList;
@@ -44,5 +46,11 @@ public class POItemNameList {
     }
     public void setOtherPOEntityList(List<POItemNameListWithAllOtherPOEntity> otherPOEntityList) {
         this.otherPOEntityList = otherPOEntityList;
+    }
+    public boolean isDecimalAllowed() {
+        return isDecimalAllowed;
+    }
+    public void setDecimalAllowed(boolean decimalAllowed) {
+        isDecimalAllowed = decimalAllowed;
     }
 }

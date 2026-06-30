@@ -23,14 +23,20 @@ public class POModelListService {
 
         Optional<POModelList> existing = poModelListRepository.findByModelIgnoreCaseAndCategoryIgnoreCase(model, category);
         if (existing.isPresent()) {
-            throw new RuntimeException("Duplicate entry: model already exists for this category.");
+            return null; // Already exists, no need to save
         }
 
+        poModelList.setModel(model);
+        poModelList.setCategory(category);
         return poModelListRepository.save(poModelList);
     }
 
     public List<POModelList> getAllPOModelList(){
         return poModelListRepository.findAll();
+    }
+    public POModelList getPOModalById(Long id){
+        return poModelListRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("PO Modal With ID" + id + "Not Found"));
     }
 
     public POModelList updatePOModelList(Long id, POModelList poModelList){

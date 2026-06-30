@@ -1,10 +1,9 @@
 package com.example.Dashboard2.Entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 
 @Entity
 public class PurchaseOrderTableAudit {
@@ -17,35 +16,37 @@ public class PurchaseOrderTableAudit {
     @JsonProperty("purchase_order_id")
     private Long purchaseOrderId;
     // Old Values
-    @JsonProperty("item_id")
+    @JsonProperty("old_item_id")
     private int oldItemId;
-    @JsonProperty("category_id")
+    @JsonProperty("old_category_id")
     private int oldCategoryId;
-    @JsonProperty("model_id")
+    @JsonProperty("old_model_id")
     private int oldModelId;
-    @JsonProperty("brand_id")
+    @JsonProperty("old_brand_id")
     private int oldBrandId;
-    @JsonProperty("type_id")
+    @JsonProperty("old_type_id")
     private int oldTypeId;
-    @JsonProperty("quantity")
-    private int oldQuantity;
-    @JsonProperty("amount")
+    @JsonProperty("old_quantity")
+    @Column(precision = 10, scale = 3)
+    private BigDecimal oldQuantity;
+    @JsonProperty("old_amount")
     private double oldAmount;
 
     // New Values
-    @JsonProperty("item_id")
+    @JsonProperty("new_item_id")
     private int newItemId;
-    @JsonProperty("category_id")
+    @JsonProperty("new_category_id")
     private int newCategoryId;
-    @JsonProperty("model_id")
+    @JsonProperty("new_model_id")
     private int newModelId;
-    @JsonProperty("brand_id")
+    @JsonProperty("new_brand_id")
     private int newBrandId;
-    @JsonProperty("type_id")
+    @JsonProperty("new_type_id")
     private int newTypeId;
-    @JsonProperty("quantity")
-    private int newQuantity;
-    @JsonProperty("amount")
+    @JsonProperty("new_quantity")
+    @Column(precision = 10, scale = 3)
+    private BigDecimal newQuantity;
+    @JsonProperty("new_amount")
     private double newAmount;
 
     @JsonProperty("edited_by")
@@ -117,11 +118,11 @@ public class PurchaseOrderTableAudit {
         this.oldTypeId = oldTypeId;
     }
 
-    public int getOldQuantity() {
+    public BigDecimal getOldQuantity() {
         return oldQuantity;
     }
 
-    public void setOldQuantity(int oldQuantity) {
+    public void setOldQuantity(BigDecimal oldQuantity) {
         this.oldQuantity = oldQuantity;
     }
 
@@ -173,11 +174,11 @@ public class PurchaseOrderTableAudit {
         this.newTypeId = newTypeId;
     }
 
-    public int getNewQuantity() {
+    public BigDecimal getNewQuantity() {
         return newQuantity;
     }
 
-    public void setNewQuantity(int newQuantity) {
+    public void setNewQuantity(BigDecimal newQuantity) {
         this.newQuantity = newQuantity;
     }
 

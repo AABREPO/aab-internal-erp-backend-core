@@ -20,6 +20,12 @@ public class POCategoryListService {
     public List<POCategoryList> getAllPOCategoryList(){
         return poCategoryListRepository.findAll();
     }
+
+    public POCategoryList getPOCategoryListById(Long id){
+        return poCategoryListRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("PO Category With ID" + id + "Not Found"));
+    }
+
     public POCategoryList updatePoCategoryList(Long id, POCategoryList poCategoryList){
         Optional<POCategoryList> existingPoCategoryList = poCategoryListRepository.findById(id);
         if (existingPoCategoryList.isPresent()){

@@ -3,6 +3,7 @@ package com.example.Dashboard2.Controller;
 import com.example.Dashboard2.Entity.POModelList;
 import com.example.Dashboard2.Service.POModelListService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,6 +23,10 @@ public class POModelListController {
     @GetMapping("/getAll")
     public List<POModelList> getAllPOModelList(){
         return poModelListService.getAllPOModelList();
+    }
+    @GetMapping("/get/{id}")
+    public ResponseEntity<POModelList> getModalById(@PathVariable Long id){
+        return ResponseEntity.ok(poModelListService.getPOModalById(id));
     }
     @PutMapping("/edit/{id}")
     public POModelList updatePoModelList(@PathVariable Long id, @RequestBody POModelList poModelList){

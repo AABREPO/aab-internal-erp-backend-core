@@ -4,6 +4,7 @@ import com.example.Dashboard2.Entity.POBrandList;
 import com.example.Dashboard2.Repository.POBrandListRepository;
 import com.example.Dashboard2.Service.POBrandListService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +24,10 @@ public class POBrandListController {
     @GetMapping("/getAll")
     public List<POBrandList> getAllPOBrandList(){
         return poBrandListService.getAllPOBrandList();
+    }
+    @GetMapping("/get/{id}")
+    public ResponseEntity<POBrandList> getPOBrandListById(@PathVariable Long id){
+        return ResponseEntity.ok(poBrandListService.getBrandById(id));
     }
 
     @PutMapping("/edit/{id}")

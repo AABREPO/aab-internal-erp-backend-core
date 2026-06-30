@@ -15,10 +15,8 @@ public class AgreementPropertyName {
     private String propertyAddress;
     @OneToMany(mappedBy = "agreementPropertyName", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AgreementPropertyOwnerDetails> ownerDetailsList;
-
     @OneToMany(mappedBy = "agreementPropertyName", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AgreementPropertyDetailsWithDoorNoAndFloorName> propertyDetailsList;
-
     // Getters and setters
     public Long getId() {
         return id;

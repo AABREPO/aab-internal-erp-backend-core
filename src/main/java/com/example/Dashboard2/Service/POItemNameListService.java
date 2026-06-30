@@ -33,6 +33,10 @@ public class POItemNameListService {
     public List<POItemNameList> getAllPOItemNameList(){
         return poItemNameListRepo.findAll();
     }
+    public POItemNameList getPOItemNameById(Long id){
+        return poItemNameListRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("PO Item Name With ID" + id + "Not Found"));
+    }
 
     public POItemNameList editItemName(Long id, POItemNameList updatedPOItemName){
         Optional<POItemNameList> existingPOItemName = poItemNameListRepo.findById(id);
@@ -41,6 +45,7 @@ public class POItemNameListService {
             pOItemName.setItemName(updatedPOItemName.getItemName());
             pOItemName.setCategory(updatedPOItemName.getCategory());
             pOItemName.setGroupName(updatedPOItemName.getGroupName());
+            pOItemName.setDecimalAllowed(updatedPOItemName.isDecimalAllowed());
             pOItemName.setOtherPOEntityList(updatedPOItemName.getOtherPOEntityList());
             return poItemNameListRepo.save(pOItemName);
         }
@@ -66,6 +71,25 @@ public class POItemNameListService {
             boolean isHeader = true;
             Map<String, POItemNameList> itemMap = new HashMap<>();
 
+            // Caches to avoid DB hits on every row
+            Set<String> existingModelCategorySet = new HashSet<>();
+            Set<String> existingBrandCategorySet = new HashSet<>();
+            Set<String> existingTypeCategorySet = new HashSet<>();
+
+            // Populate caches from DB
+            for (POModelList existing : poModelListService.getAllPOModelList()) {
+                existingModelCategorySet.add((existing.getModel().trim().toLowerCase() + "::" +
+                        (existing.getCategory() != null ? existing.getCategory().trim().toLowerCase() : "")));
+            }
+            for (POBrandList existing : poBrandListService.getAllPOBrandList()) {
+                existingBrandCategorySet.add((existing.getBrand().trim().toLowerCase() + "::" +
+                        (existing.getCategory() != null ? existing.getCategory().trim().toLowerCase() : "")));
+            }
+            for (POTypeColorList existing : poTypeColorListService.getAllPoTypeColorList()) {
+                existingTypeCategorySet.add((existing.getTypeColor().trim().toLowerCase() + "::" +
+                        (existing.getCategory() != null ? existing.getCategory().trim().toLowerCase() : "")));
+            }
+
             while ((line = reader.readLine()) != null) {
                 if (isHeader) {
                     isHeader = false;
@@ -73,7 +97,6 @@ public class POItemNameListService {
                 }
 
                 String[] tokens = line.split(",", -1); // Allow empty strings
-
                 if (tokens.length < 8) continue;
 
                 String itemName = tokens[0].trim();
@@ -85,29 +108,34 @@ public class POItemNameListService {
                 String minQty = tokens[6].trim();
                 String defaultQty = tokens[7].trim();
 
-                // Save model if not duplicate
-                try {
+                String modelKey = model.toLowerCase() + "::" + category.toLowerCase();
+                String brandKey = brand.toLowerCase() + "::" + category.toLowerCase();
+                String typeKey = type.toLowerCase() + "::" + category.toLowerCase();
+
+                // Save only if not already present
+                if (!existingModelCategorySet.contains(modelKey)) {
                     POModelList modelEntity = new POModelList();
                     modelEntity.setModel(model);
                     modelEntity.setCategory(category);
                     poModelListService.savePoModelList(modelEntity);
-                } catch (RuntimeException ignored) {}
+                    existingModelCategorySet.add(modelKey);
+                }
 
-                // Save brand if not duplicate
-                try {
+                if (!existingBrandCategorySet.contains(brandKey)) {
                     POBrandList brandEntity = new POBrandList();
                     brandEntity.setBrand(brand);
                     brandEntity.setCategory(category);
                     poBrandListService.savePoBrandList(brandEntity);
-                } catch (RuntimeException ignored) {}
+                    existingBrandCategorySet.add(brandKey);
+                }
 
-                // Save typeColor if not duplicate
-                try {
-                    POTypeColorList typeColorEntity = new POTypeColorList();
-                    typeColorEntity.setTypeColor(type);
-                    typeColorEntity.setCategory(category);
-                    poTypeColorListService.savePoTypeColorList(typeColorEntity);
-                } catch (RuntimeException ignored) {}
+                if (!existingTypeCategorySet.contains(typeKey)) {
+                    POTypeColorList typeEntity = new POTypeColorList();
+                    typeEntity.setTypeColor(type);
+                    typeEntity.setCategory(category);
+                    poTypeColorListService.savePoTypeColorList(typeEntity);
+                    existingTypeCategorySet.add(typeKey);
+                }
 
                 // POItemNameList logic
                 POItemNameList poItem = itemMap.getOrDefault(itemName, new POItemNameList());
@@ -131,7 +159,7 @@ public class POItemNameListService {
             }
 
             poItemNameListRepo.saveAll(itemMap.values());
-            return "CSV uploaded and data saved successfully.";
+            return "CSV uploaded and unique data saved successfully.";
 
         } catch (Exception e) {
             throw new RuntimeException("Error while processing CSV file: " + e.getMessage(), e);
