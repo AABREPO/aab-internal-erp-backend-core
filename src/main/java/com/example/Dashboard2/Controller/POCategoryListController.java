@@ -3,6 +3,7 @@ package com.example.Dashboard2.Controller;
 import com.example.Dashboard2.Entity.POCategoryList;
 import com.example.Dashboard2.Service.POCategoryListService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,10 @@ public class POCategoryListController {
     @GetMapping("/getAll")
     public List<POCategoryList> getAllPoCategoryList(){
         return poCategoryListService.getAllPOCategoryList();
+    }
+    @GetMapping("/get/{id}")
+    public ResponseEntity<POCategoryList> getPOCategoryById(@PathVariable Long id){
+        return ResponseEntity.ok(poCategoryListService.getPOCategoryListById(id));
     }
     @PutMapping("/edit/{id}")
     public POCategoryList updatePoCategoryList(@PathVariable Long id, @RequestBody POCategoryList poCategoryList){

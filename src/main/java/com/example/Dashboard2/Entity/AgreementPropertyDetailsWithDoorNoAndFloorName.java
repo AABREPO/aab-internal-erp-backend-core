@@ -17,7 +17,7 @@ public class AgreementPropertyDetailsWithDoorNoAndFloorName {
     private String area;
     private String ebNo;
     @ManyToOne
-    @JoinColumn(name = "agreement_property_name_id")  // FK column for the relationship
+    @JoinColumn(name = "agreement_property_name_id")
     @JsonBackReference
     private AgreementPropertyName agreementPropertyName;
 

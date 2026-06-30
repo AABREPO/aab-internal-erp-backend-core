@@ -5,6 +5,7 @@ import com.example.Dashboard2.Repository.PurchaseOrderAuditRepository;
 import com.example.Dashboard2.Service.PurchaseOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @RestController
@@ -24,54 +25,39 @@ public class PurchaseOrderController {
     public List<PurchaseOrder> getAllPurchaseOrders() {
         return purchaseOrderService.getAllPurchaseOrders();
     }
-
-    @GetMapping("/audit/getAll/{id}")
-    public List<PurchaseOrderAudit> getAllPurchaseOrderAudit(@PathVariable Long id){
-        return purchaseOrderService.getAllPurchaseOrderAudit(id);
+    //Get last 250 data from purchase orders
+    @GetMapping("/get/latest")
+    public List<PurchaseOrder> getLatestPurchaseOrders(){
+        return purchaseOrderService.getLast250PurchaseOrders();
+    }
+    @GetMapping("/grn-requested")
+    public List<PurchaseOrder> getGrnRequestedPurchaseOrders() {
+        return purchaseOrderService.getGrnRequestedPurchaseOrders();
     }
     //edit full purchase order
     @PutMapping("/edit/{id}")
     public PurchaseOrder updatePurchaseOrder(@PathVariable Long id, @RequestBody PurchaseOrder updatedOrder) {
         return purchaseOrderService.editPurchaseOrders(id, updatedOrder);
     }
-    @GetMapping("/{id}/audit")
-    public List<PurchaseOrderAudit> getPurchaseOrderAudit(@PathVariable Long id) {
-        return purchaseOrderService.getAllPurchaseOrderAudit(id);
-    }
-    @PutMapping("/{id}/edit")
-    public PurchaseOrder editPurchaseOrder(
-            @PathVariable Long id,
-            @RequestBody PurchaseOrder updatedOrder,
-            @RequestParam String editedBy) {
-        return purchaseOrderService.editPurchaseOrder(id, updatedOrder, editedBy);
-    }
-    //edit and monitor the changes in purchase order table audit
-    @PutMapping("/editPurchaseTable/full/{poId}")
-    public PurchaseOrder updateFullTable(
-            @PathVariable Long poId,
-            @RequestBody List<PurchaseOrderTable> updatedTable,
-            @RequestParam String editedBy) {
-        return purchaseOrderService.updateFullTable(poId, updatedTable, editedBy);
-    }
-
     // Delete purchase order by ID
     @DeleteMapping("/delete/{id}")
     public String deletePurchaseOrder(@PathVariable Long id) {
         return purchaseOrderService.deletePurchaseOrder(id);
     }
-
     // Delete all purchase orders
     @DeleteMapping("/deleteAll")
     public String deleteAllPurchaseOrders() {
         return purchaseOrderService.deleteAllPurchaseOrders();
     }
-
     @PutMapping("/markDeleted/{id}")
-    public ResponseEntity<PurchaseOrder> markDeleted(@PathVariable Long id, @RequestParam boolean deleted) {
-        PurchaseOrder updated = purchaseOrderService.toggleDeletedStatus(id, deleted);
+    public ResponseEntity<PurchaseOrder> markDeleted(@PathVariable Long id, @RequestParam boolean deleteStatus) {
+        PurchaseOrder updated = purchaseOrderService.toggleDeletedStatus(id, deleteStatus);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
-
+    @GetMapping("/get/{id}")
+    public ResponseEntity<PurchaseOrder> getPurchaseOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderService.getPOById(id));
+    }
     // get the vendorName count
     @GetMapping("/countByVendor")
     public Long getCountByVendor(@RequestParam int vendorId) {
@@ -82,19 +68,96 @@ public class PurchaseOrderController {
     public PurchaseOrder updatePoNotes(@PathVariable Long id, @RequestBody PurchaseOrderNotes updatedNote) {
         return purchaseOrderService.updatePoNotes(id, updatedNote);
     }
-    @GetMapping("/audit/{poId}")
-    public List<PurchaseOrderTableAudit> getAuditHistory(@PathVariable Long poId) {
-        return purchaseOrderService.findByPurchaseOrderId(poId);
+    @PutMapping("/edit_with_history/{id}")
+    public PurchaseOrder editPurchaseOrder(
+            @PathVariable Long id,
+            @RequestBody PurchaseOrder purchaseOrder,
+            @RequestParam String changedBy
+    ) {
+        return purchaseOrderService.editPurchaseOrderWithHistory(
+                id,
+                purchaseOrder,
+                changedBy
+        );
     }
-    @GetMapping("/audit/full")
-    public List<PurchaseOrderAudit> getFullAuditHistory() {
-        return poAuditRepository.findAll();
+    @GetMapping("/history/{id}")
+    public List<PurchaseOrderHistory> getPurchaseOrderHistory(@PathVariable Long id) {
+        return purchaseOrderService.getPurchaseOrderHistory(id);
     }
-    @GetMapping("/audit/full/{poId}")
-    public List<PurchaseOrderAudit> getFullPoAuditById(@PathVariable Long poId) {
-        return poAuditRepository.findAll()
-                .stream()
-                .filter(a -> a.getPurchaseOrderId().equals(poId))
-                .toList();
+    @PutMapping("/payment/complete")
+    public ResponseEntity<?> completePayment( @RequestParam int vendorId, @RequestParam String eno) {
+        purchaseOrderService.completePayment(vendorId, eno);
+        return ResponseEntity.ok("Payment marked as complete for vendorId=" + vendorId + ", eno=" + eno);
+    }
+    @PatchMapping("/{id}/grn-request")
+    public PurchaseOrder updateGrnRequest(
+            @PathVariable Long id,
+            @RequestParam boolean status) {
+        return purchaseOrderService.updateGrnRequestSend(id, status);
+    }
+
+    // 2. Update GRN Verified
+    @PatchMapping("/{id}/grn-verified")
+    public PurchaseOrder updateGrnVerified(
+            @PathVariable Long id,
+            @RequestParam boolean status) {
+        return purchaseOrderService.updateGrnVerified(id, status);
+    }
+
+    // 3. Update GRN Verification Rejected
+    @PatchMapping("/{id}/grn-rejected")
+    public PurchaseOrder updateGrnRejected(
+            @PathVariable Long id,
+            @RequestParam boolean status) {
+        return purchaseOrderService.updateGrnVerificationRejected(id, status);
+    }
+
+    // 4. Update GRN Completed
+    @PatchMapping("/{id}/grn-completed")
+    public PurchaseOrder updateGrnCompleted(
+            @PathVariable Long id,
+            @RequestParam boolean status) {
+        return purchaseOrderService.updateGrnCompleted(id, status);
+    }
+
+    // update To Stock
+    @PatchMapping("/{id}/to-stock")
+    public PurchaseOrder updatedToStock(
+            @PathVariable Long id,
+            @RequestParam boolean status
+    ){
+        return purchaseOrderService.updateToStock(id, status);
+    }
+    @GetMapping("/site-incharge/{siteInchargeId}")
+    public List<PurchaseOrder> getBySiteInchargeId(
+            @PathVariable int siteInchargeId) {
+        return purchaseOrderService.getBySiteInchargeId(siteInchargeId);
+    }
+    @PatchMapping("/description/{id}")
+    public PurchaseOrder updateDescription(@PathVariable Long id, @RequestBody String description){
+        return purchaseOrderService.updateDescription(id, description);
+    }
+    @PatchMapping("/verify/{poId}/{itemId}")
+    public PurchaseOrder updateItemVerification(
+            @PathVariable Long poId,
+            @PathVariable Long itemId,
+            @RequestBody String isVerified) {
+
+        boolean value = Boolean.parseBoolean(isVerified.trim());
+        return purchaseOrderService.updateItemVerification(poId, itemId, value);
+    }
+    @PatchMapping("/reason/{poId}/{itemId}")
+    public PurchaseOrder updateRejectionReason(@PathVariable Long poId,
+                                               @PathVariable Long itemId,
+                                               @RequestBody String reason) {
+
+        return purchaseOrderService.updateItemRejectionReason(poId, itemId, reason);
+    }
+    @PatchMapping("/reject/{poId}/{itemId}")
+    public PurchaseOrder updateRejectionStatus(@PathVariable Long poId,
+                                               @PathVariable Long itemId,
+                                               @RequestBody String isRejected){
+        boolean value = Boolean.parseBoolean(isRejected.trim());
+        return purchaseOrderService.updateItemRejection(poId,itemId,value);
     }
 }

@@ -11,6 +11,7 @@ public class InventoryStockingLocation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String stockingLocation;
+    private Long stockingLocationActualId;
 
     public Long getId() {
         return id;
@@ -26,5 +27,13 @@ public class InventoryStockingLocation {
 
     public void setStockingLocation(String stockingLocation) {
         this.stockingLocation = stockingLocation;
+    }
+
+    public Long getStockingLocationActualId() {
+        return stockingLocationActualId;
+    }
+
+    public void setStockingLocationActualId(Long stockingLocationActualId) {
+        this.stockingLocationActualId = stockingLocationActualId;
     }
 }

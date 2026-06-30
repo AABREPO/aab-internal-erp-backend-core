@@ -2,6 +2,7 @@ package com.example.Dashboard2.Service;
 
 import com.example.Dashboard2.Entity.POBrandList;
 import com.example.Dashboard2.Entity.POModelList;
+import com.example.Dashboard2.Entity.PurchaseOrder;
 import com.example.Dashboard2.Repository.POBrandListRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,19 +20,24 @@ public class POBrandListService {
     private POBrandListRepository poBrandListRepository;
 
     public POBrandList savePoBrandList(POBrandList poBrandList){
-
         String brand = poBrandList.getBrand().trim();
-        String category = poBrandList.getCategory() !=null ? poBrandList.getCategory().trim() : "";
+        String category = poBrandList.getCategory() != null ? poBrandList.getCategory().trim() : "";
 
-        Optional<POBrandList> existing = poBrandListRepository.findByBrandIgnoreCaseAndCategoryIgnoreCase(brand,category);
-        if (existing.isPresent()){
-            throw new RuntimeException("Duplicate entry: Brand already exists for this category.");
+        Optional<POBrandList> existing = poBrandListRepository.findByBrandIgnoreCaseAndCategoryIgnoreCase(brand, category);
+        if (existing.isPresent()) {
+            return null;
         }
 
+        poBrandList.setBrand(brand);
+        poBrandList.setCategory(category);
         return poBrandListRepository.save(poBrandList);
     }
     public List<POBrandList> getAllPOBrandList(){
         return poBrandListRepository.findAll();
+    }
+    public POBrandList getBrandById(Long id){
+        return poBrandListRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Brand With ID" + id +"Not Found"));
     }
     public POBrandList updatePOBrandList(Long id, POBrandList poBrandList){
         Optional<POBrandList> existingPOBrandList = poBrandListRepository.findById(id);
@@ -55,14 +61,11 @@ public class POBrandListService {
         poBrandListRepository.deleteAll();
     }
 
-
     public String uploadPOBrandLists(MultipartFile file) {
         if (file.isEmpty()) {
             return "Please upload a file!";
         }
-
         List<POBrandList> poBrandLists = new ArrayList<>();
-
         // Fetch existing brands with their categories to check for duplicates
         List<POBrandList> existingEntries = poBrandListRepository.findAll();
         Set<String> existingModelCategorySet = new HashSet<>();
@@ -70,11 +73,9 @@ public class POBrandListService {
             existingModelCategorySet.add(existing.getBrand().toLowerCase() + "::" +
                     (existing.getCategory() != null ? existing.getCategory().toLowerCase() : ""));
         }
-
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String filename = file.getOriginalFilename();
             String line;
-
             if (filename != null && filename.endsWith(".csv")) {
                 boolean isFirstLine = true;
                 while ((line = reader.readLine()) != null) {
@@ -86,7 +87,6 @@ public class POBrandListService {
                     if (values.length >= 1) {
                         String brand = values[0].trim();
                         String category = values.length > 1 ? values[1].trim() : "";
-
                         String key = brand.toLowerCase() + "::" + category.toLowerCase();
                         if (!existingModelCategorySet.contains(key)) {
                             POBrandList poBrandList = new POBrandList();

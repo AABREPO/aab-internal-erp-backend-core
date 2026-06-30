@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/properties")
-@CrossOrigin(origins = "*")
 public class AgreementPropertyController {
 
     @Autowired

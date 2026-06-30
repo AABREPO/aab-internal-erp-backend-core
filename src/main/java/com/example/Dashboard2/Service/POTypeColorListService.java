@@ -21,19 +21,27 @@ public class POTypeColorListService {
 
     public POTypeColorList savePoTypeColorList(POTypeColorList poTypeColorList){
         String typeColor = poTypeColorList.getTypeColor().trim();
-        String category = poTypeColorList.getCategory() !=null ? poTypeColorList.getCategory().trim() : "";
+        String category = poTypeColorList.getCategory() != null ? poTypeColorList.getCategory().trim() : "";
 
         Optional<POTypeColorList> existing = poTypeColorListRepository.findByTypeColorIgnoreCaseAndCategoryIgnoreCase(typeColor, category);
-        if (existing.isPresent()){
-            throw new RuntimeException("Duplicate entry: Type or Color already exists for this category. ");
+        if (existing.isPresent()) {
+            return null;
         }
 
+        poTypeColorList.setTypeColor(typeColor);
+        poTypeColorList.setCategory(category);
         return poTypeColorListRepository.save(poTypeColorList);
     }
 
     public List<POTypeColorList> getAllPoTypeColorList(){
         return poTypeColorListRepository.findAll();
     }
+
+    public POTypeColorList getPOTypeColorById(Long id){
+        return poTypeColorListRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("PO Type Color With ID " + id + "Not Found"));
+    }
+
     public POTypeColorList updatePOTypeColorList(Long id, POTypeColorList poTypeColorList){
         Optional<POTypeColorList> existingPOTypeColorList = poTypeColorListRepository.findById(id);
         if (existingPOTypeColorList.isPresent()){

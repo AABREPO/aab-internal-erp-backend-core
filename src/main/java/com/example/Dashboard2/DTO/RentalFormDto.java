@@ -7,7 +7,9 @@ import java.time.LocalDateTime;
 public class RentalFormDto {
     private int eno;
     private String formType;
+    private Long shopNoId;
     private String shopNo;
+    private Long tenantNameId;
     private String tenantName;
     private String amount;
     private String refundAmount;
@@ -15,4 +17,6 @@ public class RentalFormDto {
     private String paymentMode;
     private String forTheMonthOf;
     private String attachedFile;
+    private String enteredBy;
+    private String branchId;
 }

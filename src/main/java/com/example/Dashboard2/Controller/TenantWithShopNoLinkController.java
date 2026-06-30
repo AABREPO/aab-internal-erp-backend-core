@@ -1,5 +1,6 @@
 package com.example.Dashboard2.Controller;
 
+import com.example.Dashboard2.DTO.ShopClosureDto;
 import com.example.Dashboard2.DTO.ShopUpdateDto;
 import com.example.Dashboard2.Entity.PropertyNameLinkWithTenant;
 import com.example.Dashboard2.Entity.ShopLinkWithTenant;
@@ -70,4 +71,18 @@ public class TenantWithShopNoLinkController {
     public String deleteAllTenantShop(){
         return tenantWithShopNoLinkService.deleteAllTenantShopLink();
     }
+
+    @PostMapping("/updateClosureDate/{tenantName}/{shopNo}")
+    public TenantWithShopNoLink updateShopClosureDateByTenantAndShopNo(
+            @PathVariable String tenantName,
+            @PathVariable String shopNo,
+            @RequestBody ShopClosureDto shopClosureDto) {
+        return tenantWithShopNoLinkService.updateShopClosureDateByTenantAndShopNo(
+                tenantName,
+                shopNo,
+                shopClosureDto.getShopClosureDate()
+        );
+    }
+
+
 }

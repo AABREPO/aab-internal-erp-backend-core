@@ -19,7 +19,7 @@ public class AgreementPropertyDataService {
     }
 
     public List<AgreementPropertyDataWithFileNames> getAllAgreements() {
-        return repository.findAll();
+        return repository.findByIsDeletedFalse();
     }
 
     public Optional<AgreementPropertyDataWithFileNames> getAgreementById(Long id) {
@@ -44,7 +44,12 @@ public class AgreementPropertyDataService {
     }
 
     public void deleteAgreementById(Long id) {
-        repository.deleteById(id);
+        repository.findById(id)
+                .map(existing -> {
+                    existing.setDeleted(true); // mark as deleted
+                    return repository.save(existing);
+                })
+                .orElseThrow(() -> new RuntimeException("Agreement not found with ID: " + id));
     }
 
     public void deleteAllAgreements() {

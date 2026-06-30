@@ -1,0 +1,455 @@
+package com.example.Dashboard2.Service;
+
+import com.example.Dashboard2.Entity.LoanPortal;
+import com.example.Dashboard2.Entity.StaffAdvancePortal;
+import com.example.Dashboard2.Entity.StaffAdvancePortalAudit;
+import com.example.Dashboard2.Repository.StaffAdvancePortalRepository;
+import com.example.Dashboard2.Repository.StaffAdvancePortalAuditRepository;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.WeekFields;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+@Service
+public class StaffAdvancePortalService {
+
+    @Autowired
+    private StaffAdvancePortalRepository repository;
+
+    @Autowired
+    private StaffAdvancePortalAuditRepository auditRepository;
+
+    @Autowired
+    private WeeklyPaymentsReceivedService paymentsReceivedService;
+
+    @Autowired
+    @Lazy
+    private LoanPortalService loanPortalService;
+
+    public Long getNextEntryNo() {
+        Long maxEntryNo = repository.findMaxEntryNo();
+        return (maxEntryNo == null) ? 1L : maxEntryNo + 1;
+    }
+
+    private LoanPortal createLoanPortalFromStaffAdvance(StaffAdvancePortal staffAdvance, int weekNo) {
+        LoanPortal loanPortal = new LoanPortal();
+        loanPortal.setType("Transfer");
+        loanPortal.setDate(staffAdvance.getDate());
+        loanPortal.setWeekNo(weekNo);
+        // Entry number will be set by LoanPortalService using its own sequence
+        loanPortal.setEntryNo(null);
+        loanPortal.setEmployeeId(staffAdvance.getEmployeeId());
+        loanPortal.setLabourId(staffAdvance.getLabourId());
+        // Set fromPurposeId to 1 as per requirement
+        loanPortal.setFromPurposeId(1L);
+        loanPortal.setToPurposeId(0L);
+        loanPortal.setAmount(Math.abs(staffAdvance.getAmount()));
+        loanPortal.setLoanPaymentMode(staffAdvance.getStaffPaymentMode());
+        loanPortal.setLoanRefundAmount(0.0);
+        // Description should mention "Transfer from Staff Advance"
+        String description = staffAdvance.getDescription();
+        if (description != null && !description.trim().isEmpty()) {
+            loanPortal.setDescription("Transfer from Staff Advance - " + description);
+        } else {
+            loanPortal.setDescription("Transfer from Staff Advance");
+        }
+        loanPortal.setFileUrl(staffAdvance.getFileUrl());
+        loanPortal.setVendorId(0);
+        loanPortal.setContractorId(0);
+        loanPortal.setProjectId(0);
+        loanPortal.setTransferProjectId(0);
+        loanPortal.setBranchId(staffAdvance.getBranchId());
+        return loanPortal;
+    }
+
+    private Map<Long, LocalDateTime> captureTimestamps(StaffAdvancePortal... entries) {
+        Map<Long, LocalDateTime> timestamps = new HashMap<>();
+        for (StaffAdvancePortal entry : entries) {
+            if (entry != null && entry.getStaffAdvancePortalId() != null) {
+                timestamps.put(entry.getStaffAdvancePortalId(), entry.getTimestamp());
+            }
+        }
+        return timestamps;
+    }
+
+    private Map<Long, LocalDateTime> captureTimestamps(List<StaffAdvancePortal> entries) {
+        Map<Long, LocalDateTime> timestamps = new HashMap<>();
+        for (StaffAdvancePortal entry : entries) {
+            if (entry.getStaffAdvancePortalId() != null) {
+                timestamps.put(entry.getStaffAdvancePortalId(), entry.getTimestamp());
+            }
+        }
+        return timestamps;
+    }
+
+    private void restoreTimestamp(StaffAdvancePortal entry, Map<Long, LocalDateTime> timestamps) {
+        if (entry == null || entry.getStaffAdvancePortalId() == null) {
+            return;
+        }
+        LocalDateTime original = timestamps.get(entry.getStaffAdvancePortalId());
+        if (original != null) {
+            entry.setTimestamp(original);
+        }
+    }
+
+    private void applyNonTransferUpdate(StaffAdvancePortal target, StaffAdvancePortal updated, int weekNo) {
+        target.setType(updated.getType());
+        target.setDate(updated.getDate());
+        target.setWeekNo(weekNo);
+        target.setEmployeeId(updated.getEmployeeId());
+        target.setLabourId(updated.getLabourId());
+        target.setFromPurposeId(updated.getFromPurposeId());
+        target.setToPurposeId(null);
+        target.setStaffPaymentMode(updated.getStaffPaymentMode());
+        target.setAmount(updated.getAmount());
+        target.setStaffRefundAmount(updated.getStaffRefundAmount());
+        target.setDescription(updated.getDescription());
+        target.setFileUrl(updated.getFileUrl());
+        target.setBranchId(updated.getBranchId());
+    }
+
+    private void applyTransferFromUpdate(StaffAdvancePortal target, StaffAdvancePortal updated, int weekNo) {
+        target.setType(updated.getType());
+        target.setDate(updated.getDate());
+        target.setWeekNo(weekNo);
+        target.setEmployeeId(updated.getEmployeeId());
+        target.setLabourId(updated.getLabourId());
+        target.setFromPurposeId(updated.getFromPurposeId());
+        target.setToPurposeId(updated.getToPurposeId());
+        target.setStaffPaymentMode(updated.getStaffPaymentMode());
+        target.setAmount(-Math.abs(updated.getAmount()));
+        target.setStaffRefundAmount(0);
+        target.setDescription(updated.getDescription());
+        target.setFileUrl(updated.getFileUrl());
+        target.setBranchId(updated.getBranchId());
+    }
+
+    private void applyTransferToUpdate(StaffAdvancePortal target, StaffAdvancePortal updated, int weekNo) {
+        target.setType(updated.getType());
+        target.setDate(updated.getDate());
+        target.setWeekNo(weekNo);
+        target.setEmployeeId(updated.getEmployeeId());
+        target.setLabourId(updated.getLabourId());
+        target.setFromPurposeId(updated.getToPurposeId());
+        target.setToPurposeId(updated.getFromPurposeId());
+        target.setStaffPaymentMode(updated.getStaffPaymentMode());
+        target.setAmount(Math.abs(updated.getAmount()));
+        target.setStaffRefundAmount(0);
+        target.setDescription(updated.getDescription());
+        target.setFileUrl(updated.getFileUrl());
+        target.setBranchId(updated.getBranchId());
+    }
+
+    @Transactional
+    public StaffAdvancePortal save(StaffAdvancePortal staffAdvance) {
+        if (staffAdvance.getStaffAdvancePortalId() != null) {
+            repository.findById(staffAdvance.getStaffAdvancePortalId())
+                    .ifPresent(existing -> staffAdvance.setTimestamp(existing.getTimestamp()));
+        }
+        if (staffAdvance.getEntryNo() == null) {
+            staffAdvance.setEntryNo(getNextEntryNo());
+        }
+        if (staffAdvance.getWeekNo() == 0) {
+            LocalDate dateForWeek;
+            try {
+                dateForWeek = LocalDate.parse(staffAdvance.getDate());
+            } catch (Exception e) {
+                dateForWeek = LocalDate.now();
+            }
+            WeekFields weekFields = WeekFields.of(Locale.getDefault());
+            int weekNo = dateForWeek.get(weekFields.weekOfWeekBasedYear());
+            staffAdvance.setWeekNo(weekNo);
+        }
+
+        StaffAdvancePortal saved;
+        if ("Transfer".equalsIgnoreCase(staffAdvance.getType())) {
+            // Check if this is coming from LoanPortal - if so, save only positive amount entry
+            boolean isFromLoanPortal = staffAdvance.getDescription() != null && 
+                                       staffAdvance.getDescription().contains("Transfer from Loan Portal");
+            
+            if (isFromLoanPortal) {
+                // Only save positive amount entry (coming from LoanPortal)
+                // Keep the fromPurposeId and toPurposeId that were set (6 and 4/5 based on employee_id/labour_id)
+                saved = repository.save(staffAdvance);
+                // ✅ trigger recalculation after save
+                paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo(), saved.getDate(), saved.getBranchId());
+                return saved;
+            }
+            
+            // Check if toPurposeId is 6 - if so, save negative amount in StaffAdvancePortal and positive amount to LoanPortal
+            boolean isTransferToLoanPortal = staffAdvance.getToPurposeId() != null && staffAdvance.getToPurposeId() == 6;
+
+            if (isTransferToLoanPortal) {
+                // Only save negative amount entry in StaffAdvancePortal
+                StaffAdvancePortal fromEntry = new StaffAdvancePortal();
+                fromEntry.setEntryNo(staffAdvance.getEntryNo());
+                fromEntry.setDate(staffAdvance.getDate());
+                fromEntry.setWeekNo(staffAdvance.getWeekNo());
+                fromEntry.setEmployeeId(staffAdvance.getEmployeeId());
+                fromEntry.setLabourId(staffAdvance.getLabourId());
+                fromEntry.setType(staffAdvance.getType());
+                fromEntry.setTimestamp(staffAdvance.getTimestamp());
+                fromEntry.setFromPurposeId(staffAdvance.getFromPurposeId());
+                fromEntry.setToPurposeId(staffAdvance.getToPurposeId());
+                fromEntry.setAmount(-Math.abs(staffAdvance.getAmount()));
+                fromEntry.setStaffPaymentMode(staffAdvance.getStaffPaymentMode());
+                fromEntry.setDescription(staffAdvance.getDescription());
+                fromEntry.setStaffRefundAmount(0);
+                fromEntry.setBranchId(staffAdvance.getBranchId());
+                
+                saved = repository.save(fromEntry);
+
+                // Create and save positive amount entry in LoanPortal
+                // Entry number will be generated by LoanPortalService according to its own sequence
+                LoanPortal loanPortalEntry = createLoanPortalFromStaffAdvance(staffAdvance, saved.getWeekNo());
+                LoanPortal savedLoanPortal = loanPortalService.save(loanPortalEntry);
+                
+                // Link StaffAdvancePortal to LoanPortal
+                saved.setLoanPortalId(savedLoanPortal.getLoanPortalId());
+                repository.save(saved);
+            } else {
+                // Normal Transfer behavior - save both entries in StaffAdvancePortal
+                StaffAdvancePortal fromEntry = new StaffAdvancePortal();
+                fromEntry.setEntryNo(staffAdvance.getEntryNo());
+                fromEntry.setDate(staffAdvance.getDate());
+                fromEntry.setWeekNo(staffAdvance.getWeekNo());
+                fromEntry.setEmployeeId(staffAdvance.getEmployeeId());
+                fromEntry.setLabourId(staffAdvance.getLabourId());
+                fromEntry.setType(staffAdvance.getType());
+                fromEntry.setTimestamp(staffAdvance.getTimestamp());
+                fromEntry.setFromPurposeId(staffAdvance.getFromPurposeId());
+                fromEntry.setToPurposeId(staffAdvance.getToPurposeId());
+                fromEntry.setAmount(-Math.abs(staffAdvance.getAmount()));
+                fromEntry.setStaffPaymentMode(staffAdvance.getStaffPaymentMode());
+                fromEntry.setDescription(staffAdvance.getDescription());
+                fromEntry.setStaffRefundAmount(0);
+                fromEntry.setBranchId(staffAdvance.getBranchId());
+
+                StaffAdvancePortal toEntry = new StaffAdvancePortal();
+                toEntry.setEntryNo(staffAdvance.getEntryNo());
+                toEntry.setDate(staffAdvance.getDate());
+                toEntry.setWeekNo(staffAdvance.getWeekNo());
+                toEntry.setEmployeeId(staffAdvance.getEmployeeId());
+                toEntry.setLabourId(staffAdvance.getLabourId());
+                toEntry.setType(staffAdvance.getType());
+                toEntry.setTimestamp(staffAdvance.getTimestamp());
+                toEntry.setFromPurposeId(staffAdvance.getToPurposeId());
+                toEntry.setToPurposeId(staffAdvance.getFromPurposeId());
+                toEntry.setAmount(Math.abs(staffAdvance.getAmount()));
+                toEntry.setStaffPaymentMode(staffAdvance.getStaffPaymentMode());
+                toEntry.setDescription(staffAdvance.getDescription());
+                toEntry.setStaffRefundAmount(0);
+                toEntry.setBranchId(staffAdvance.getBranchId());
+
+                repository.save(fromEntry);
+                repository.save(toEntry);
+
+                saved = fromEntry;
+            }
+        } else {
+            staffAdvance.setToPurposeId(null);
+            saved = repository.save(staffAdvance);
+        }
+
+        // ✅ trigger recalculation after save
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(saved.getWeekNo(), saved.getDate(), saved.getBranchId());
+
+        return saved;
+    }
+
+    @Transactional
+    public List<StaffAdvancePortal> updateStaffAdvance(Long id, StaffAdvancePortal updatedAdvance, String editedBy) {
+        Optional<StaffAdvancePortal> optionalAdvance = repository.findById(id);
+        if (optionalAdvance.isEmpty()) {
+            throw new EntityNotFoundException("Staff advance not found with id: " + id);
+        }
+        StaffAdvancePortal existingAdvance = optionalAdvance.get();
+        if (updatedAdvance.getBranchId() == null) {
+            updatedAdvance.setBranchId(existingAdvance.getBranchId());
+        } else if (!Objects.equals(existingAdvance.getBranchId(), updatedAdvance.getBranchId())) {
+            throw new IllegalArgumentException("Branch ID cannot be changed for an existing staff advance entry.");
+        }
+
+        // --- AUDIT RECORD ---
+        StaffAdvancePortalAudit audit = new StaffAdvancePortalAudit();
+        audit.setStaffAdvancePortalId(existingAdvance.getStaffAdvancePortalId());
+        audit.setEditedBy(editedBy);
+        audit.setEditedDate(LocalDateTime.now());
+        audit.setOldType(existingAdvance.getType());
+        audit.setNewType(updatedAdvance.getType());
+        audit.setOldDate(existingAdvance.getDate());
+        audit.setNewDate(updatedAdvance.getDate());
+        audit.setOldEmployeeId(existingAdvance.getEmployeeId());
+        audit.setNewEmployeeId(updatedAdvance.getEmployeeId());
+        audit.setOldLabourId(existingAdvance.getLabourId());
+        audit.setNewLabourId(updatedAdvance.getLabourId());
+        audit.setOldFromPurposeId(existingAdvance.getFromPurposeId());
+        audit.setNewFromPurposeId(updatedAdvance.getFromPurposeId());
+        audit.setOldToPurposeId(existingAdvance.getToPurposeId());
+        audit.setNewToPurposeId(updatedAdvance.getToPurposeId());
+        audit.setOldStaffPaymentMode(existingAdvance.getStaffPaymentMode());
+        audit.setNewStaffPaymentMode(updatedAdvance.getStaffPaymentMode());
+        audit.setOldAmount(existingAdvance.getAmount());
+        audit.setNewAmount(updatedAdvance.getAmount());
+        audit.setOldStaffRefundAmount(existingAdvance.getStaffRefundAmount());
+        audit.setNewStaffRefundAmount(updatedAdvance.getStaffRefundAmount());
+        audit.setOldDescription(existingAdvance.getDescription());
+        audit.setNewDescription(updatedAdvance.getDescription());
+        audit.setOldFileUrl(existingAdvance.getFileUrl());
+        audit.setNewFileUrl(updatedAdvance.getFileUrl());
+        auditRepository.save(audit);
+
+        // --- WEEK NUMBER CALC ---
+        int updatedWeekNo;
+        try {
+            LocalDate dateForWeek = LocalDate.parse(updatedAdvance.getDate());
+            WeekFields weekFields = WeekFields.of(Locale.getDefault());
+            updatedWeekNo = dateForWeek.get(weekFields.weekOfWeekBasedYear());
+        } catch (Exception e) {
+            updatedWeekNo = existingAdvance.getWeekNo();
+        }
+
+        boolean wasTransferBefore = "Transfer".equalsIgnoreCase(existingAdvance.getType());
+        boolean willBeTransferNow = "Transfer".equalsIgnoreCase(updatedAdvance.getType());
+        List<StaffAdvancePortal> resultEntries = new ArrayList<>();
+        Map<Long, LocalDateTime> preservedTimestamps = captureTimestamps(existingAdvance);
+
+        // --- NON-TRANSFER -> TRANSFER ---
+        if (!wasTransferBefore && willBeTransferNow) {
+            applyTransferFromUpdate(existingAdvance, updatedAdvance, updatedWeekNo);
+            restoreTimestamp(existingAdvance, preservedTimestamps);
+            repository.save(existingAdvance);
+
+            StaffAdvancePortal toEntry = new StaffAdvancePortal();
+            toEntry.setEntryNo(existingAdvance.getEntryNo());
+            toEntry.setTimestamp(existingAdvance.getTimestamp());
+            applyTransferToUpdate(toEntry, updatedAdvance, updatedWeekNo);
+            repository.save(toEntry);
+
+            resultEntries.add(existingAdvance);
+            resultEntries.add(toEntry);
+        }
+
+        // --- TRANSFER -> NON-TRANSFER ---
+        else if (wasTransferBefore && !willBeTransferNow) {
+            List<StaffAdvancePortal> linkedEntries = repository.findByEntryNo(existingAdvance.getEntryNo());
+            preservedTimestamps.putAll(captureTimestamps(linkedEntries));
+            if (linkedEntries.size() == 2) {
+                StaffAdvancePortal firstEntry = linkedEntries.get(0);
+                StaffAdvancePortal secondEntry = linkedEntries.get(1);
+
+                StaffAdvancePortal toKeep = firstEntry.getStaffAdvancePortalId().equals(existingAdvance.getStaffAdvancePortalId()) ? firstEntry : secondEntry;
+                StaffAdvancePortal toDelete = firstEntry.getStaffAdvancePortalId().equals(existingAdvance.getStaffAdvancePortalId()) ? secondEntry : firstEntry;
+
+                applyNonTransferUpdate(toKeep, updatedAdvance, updatedWeekNo);
+                restoreTimestamp(toKeep, preservedTimestamps);
+                repository.save(toKeep);
+
+                repository.delete(toDelete);
+
+                resultEntries.add(toKeep);
+            }
+        }
+
+        // --- EDIT EXISTING TRANSFER ---
+        else if (willBeTransferNow) {
+            List<StaffAdvancePortal> linkedEntries = repository.findByEntryNo(existingAdvance.getEntryNo());
+            preservedTimestamps.putAll(captureTimestamps(linkedEntries));
+            for (StaffAdvancePortal entry : linkedEntries) {
+                if (entry.getAmount() < 0) { // FROM entry
+                    applyTransferFromUpdate(entry, updatedAdvance, updatedWeekNo);
+                } else { // TO entry
+                    applyTransferToUpdate(entry, updatedAdvance, updatedWeekNo);
+                }
+                restoreTimestamp(entry, preservedTimestamps);
+                repository.save(entry);
+                resultEntries.add(entry);
+            }
+        }
+
+        // --- EDIT NON-TRANSFER ---
+        else {
+            applyNonTransferUpdate(existingAdvance, updatedAdvance, updatedWeekNo);
+            restoreTimestamp(existingAdvance, preservedTimestamps);
+            repository.save(existingAdvance);
+            resultEntries.add(existingAdvance);
+        }
+
+        // ✅ trigger recalculation once, for whichever branch was executed
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(updatedWeekNo, updatedAdvance.getDate(), updatedAdvance.getBranchId());
+
+        return resultEntries;
+    }
+
+    public List<StaffAdvancePortal> getAll() {
+        return repository.findAll();
+    }
+
+    public List<StaffAdvancePortal> getLast250StaffAdvancePortals() {
+        return repository.findTop250ByOrderByStaffAdvancePortalIdDesc();
+    }
+
+    public List<StaffAdvancePortal> getByEmployeeId(int employeeId) {
+        return repository.findByEmployeeId(employeeId);
+    }
+
+    public List<StaffAdvancePortal> getByType(String type) {
+        return repository.findByType(type);
+    }
+
+    public List<StaffAdvancePortal> getByEmployeeIdAndType(int employeeId, String type) {
+        return repository.findByEmployeeIdAndType(employeeId, type);
+    }
+
+    public List<StaffAdvancePortal> getByWeekNo(int weekNo) {
+        return repository.findByWeekNo(weekNo);
+    }
+
+    public List<StaffAdvancePortal> getByEmployeeIdAndWeekNo(int employeeId, int weekNo) {
+        return repository.findByEmployeeIdAndWeekNo(employeeId, weekNo);
+    }
+
+    public Optional<StaffAdvancePortal> getById(Long id) {
+        return repository.findById(id);
+    }
+
+    public void deleteById(Long id) {
+        repository.deleteById(id);
+    }
+    
+    @Transactional
+    public void deleteStaffAdvancePortal(Long id) {
+        StaffAdvancePortal existing = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Staff Advance Portal not found with id: " + id));
+        int weekNumber = existing.getWeekNo();
+        repository.deleteById(id);
+        // ✅ trigger recalculation after delete
+        paymentsReceivedService.recalculateWeeklyStaffAdvanceRefundPayment(weekNumber, existing.getDate(), existing.getBranchId());
+    }
+
+    public List<StaffAdvancePortalAudit> getAuditHistory(Long staffAdvancePortalId) {
+        return auditRepository.findByStaffAdvancePortalId(staffAdvancePortalId);
+    }
+
+    public StaffAdvancePortal updateAllowToEdit(Long id, boolean allowToEdit){
+        return repository.findById(id)
+                .map( staffAdvancePortal -> {
+                    staffAdvancePortal.setAllowToEdit(allowToEdit);
+                    return repository.save(staffAdvancePortal);
+                })
+                .orElseThrow(() -> new RuntimeException("Advance Portal not found"));
+    }
+
+}
